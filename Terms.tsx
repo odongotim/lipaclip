@@ -1,172 +1,76 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
-import InfluencerSidebar from '../../components/InfluencerSidebar'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 
-type Campaign = {
-  id: string
-  title: string
-  type: string
-  thumbnail_url: string | null
-  pay_per_1k: number
-  budget: number
-  spent: number
-  period_days: number
-}
+export default function Login() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-export default function InfluencerHome() {
-  const navigate = useNavigate()
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState<string | null>(null)
-  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
+  const handleLogin = async () => {
+    setLoading(true)
+    setError('')
 
-  useEffect(() => { loadData() }, [])
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-  const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { navigate('/login'); return }
-
-    const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    if (prof?.role !== 'influencer') { navigate('/'); return }
-    setProfile(prof)
-
-    const { data: camps } = await supabase
-      .from('campaigns')
-      .select('*')
-      .eq('status', 'live')
-      .order('created_at', { ascending: false })
-
-    if (camps) setCampaigns(camps)
-    setLoading(false)
-  }
-
-  const handleSubmit = async (campaignId: string) => {
-    const url = videoUrls[campaignId]
-    if (!url) return
-    setSubmitting(campaignId)
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    // Check if already submitted
-    const { data: existing } = await supabase
-      .from('submissions')
-      .select('id')
-      .eq('campaign_id', campaignId)
-      .eq('influencer_id', user.id)
-      .single()
-
-    if (existing) {
-      alert('You have already submitted to this campaign!')
-      setSubmitting(null)
+    if (error) {
+      setError(error.message)
+      setLoading(false)
       return
     }
 
-    await supabase.from('submissions').insert({
-      campaign_id: campaignId,
-      influencer_id: user.id,
-      video_url: url,
-      status: 'pending',
-    })
+    await new Promise(r => setTimeout(r, 500))
 
-    alert('Submission successful! Views will be tracked automatically.')
-    setVideoUrls(prev => ({ ...prev, [campaignId]: '' }))
-    setSubmitting(null)
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
+
+    if (!profile) {
+      await supabase.from('profiles').insert({
+        id: data.user.id, email: data.user.email,
+        role: 'influencer', display_name: data.user.email?.split('@')[0],
+      })
+      window.location.href = '/influencer'
+      return
+    }
+
+    if (profile.role === 'admin') window.location.href = '/admin'
+    else if (profile.role === 'brand') window.location.href = '/brand'
+    else window.location.href = '/influencer'
   }
 
-  const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
-
-  if (loading) return (
-    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center">
-      <div className="text-yellow-500 animate-pulse text-xl">Loading...</div>
-    </div>
-  )
-
   return (
-    <div className="min-h-screen bg-[#0f0a06] flex">
-      <InfluencerSidebar userName={profile?.display_name} />
-
-      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-white text-2xl font-bold mb-1">Browse Campaigns</h1>
-        <p className="text-gray-400 text-sm mb-8">Pick a campaign, post your video and get paid!</p>
-
-        {campaigns.length === 0 ? (
-          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-12 text-center">
-            <div className="text-4xl mb-3">🎬</div>
-            <p className="text-gray-400 text-sm">No live campaigns at the moment. Check back soon!</p>
+    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link to="/" className="text-yellow-500 text-3xl font-bold">Lipa<span className="text-white">Clip</span></Link>
+          <p className="text-gray-400 mt-2 text-sm">Welcome back</p>
+        </div>
+        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-8">
+          <h2 className="text-white text-xl font-bold mb-6">Login to your account</h2>
+          {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
+          <div className="space-y-4">
+            <div>
+              <label className="text-gray-400 text-sm mb-1 block">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition" />
+            </div>
+            <div>
+              <label className="text-gray-400 text-sm mb-1 block">Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition" />
+            </div>
+            <button onClick={handleLogin} disabled={loading}
+              className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-3 rounded-lg transition text-sm">
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
           </div>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {campaigns.map(camp => (
-              <div key={camp.id} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl overflow-hidden">
-                {/* Thumbnail */}
-                <div className="w-full h-40 bg-yellow-500/10 flex items-center justify-center overflow-hidden">
-                  {camp.thumbnail_url
-                    ? <img src={camp.thumbnail_url} alt={camp.title} className="w-full h-full object-cover" />
-                    : <span className="text-5xl">🎬</span>
-                  }
-                </div>
-
-                <div className="p-5">
-                  {/* Title and type */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-white font-semibold text-sm">{camp.title}</h3>
-                    <span className="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded-full capitalize">
-                      {camp.type}
-                    </span>
-                  </div>
-
-                  {/* Pay */}
-                  <div className="flex items-center gap-4 mb-3">
-                    <div>
-                      <div className="text-yellow-500 font-bold text-lg">{fmtUGX(camp.pay_per_1k)}</div>
-                      <div className="text-gray-500 text-xs">per 1,000 views</div>
-                    </div>
-                    <div>
-                      <div className="text-green-400 font-bold text-lg">{camp.period_days} days</div>
-                      <div className="text-gray-500 text-xs">campaign period</div>
-                    </div>
-                  </div>
-
-                  {/* Budget progress */}
-                  <div className="mb-4">
-                    <div className="w-full bg-yellow-900/30 rounded-full h-1.5">
-                      <div
-                        className="bg-yellow-500 h-1.5 rounded-full"
-                        style={{ width: `${Math.min((camp.spent / camp.budget) * 100, 100)}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>{fmtUGX(camp.spent)} earned</span>
-                      <span>{fmtUGX(camp.budget)} budget</span>
-                    </div>
-                  </div>
-
-                  {/* Submit video */}
-                  <div className="space-y-2">
-                    <input
-                      type="url"
-                      value={videoUrls[camp.id] || ''}
-                      onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
-                      placeholder="Paste your TikTok video URL..."
-                      className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition"
-                    />
-                    <button
-                      onClick={() => handleSubmit(camp.id)}
-                      disabled={!videoUrls[camp.id] || submitting === camp.id}
-                      className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm"
-                    >
-                      {submitting === camp.id ? 'Submitting...' : 'Submit Video'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
+          <p className="text-gray-400 text-sm text-center mt-6">
+            Don't have an account? <Link to="/signup" className="text-yellow-500 hover:text-yellow-400">Sign up</Link>
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,187 +1,90 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
-export default function Signup() {
+type Props = {
+  userName?: string
+}
+
+export default function InfluencerSidebar({ userName }: Props) {
+  const [open, setOpen] = useState(false)
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const defaultRole = searchParams.get('role') || 'influencer'
-  
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [role, setRole] = useState(defaultRole)
-  const [agreed, setAgreed] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const location = useLocation()
 
-  const handleSignup = async () => {
-    setError('')
-    if (!name) { setError('Please enter your full name'); return }
-    if (!email) { setError('Please enter your email'); return }
-    if (password.length < 6) { setError('Password must be at least 6 characters'); return }
-    if (password !== confirmPassword) { setError('Passwords do not match'); return }
-    if (!agreed) { setError('Please accept the terms and conditions'); return }
-    
-    setLoading(true)
-    
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) { setError(error.message); setLoading(false); return }
-    
-    // Create profile
-    await supabase.from('profiles').insert({
-      id: data.user!.id,
-      email,
-      display_name: name,
-      phone,
-      role,
-    })
-
-    if (role === 'brand') navigate('/brand')
-    else navigate('/influencer')
-    setLoading(false)
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate('/')
   }
 
-  return (
-    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/" className="text-yellow-500 text-3xl font-bold">Lipa<span className="text-white">Clip</span></Link>
-          <p className="text-gray-400 mt-2 text-sm">Create your account</p>
-        </div>
+  const links = [
+    { label: 'Home', to: '/influencer' },
+    { label: 'Dashboard', to: '/influencer/dashboard' },
+    { label: 'My Socials', to: '/influencer/socials' },
+    { label: 'Withdraw', to: '/influencer/withdraw' },
+  ]
 
-        {/* Card */}
-        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-8">
-          <h2 className="text-white text-xl font-bold mb-6">Get started</h2>
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      <Link to="/" className="text-yellow-500 text-2xl font-bold mb-8 block">
+        Lipa<span className="text-white">Clip</span>
+      </Link>
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg mb-4">
-              {error}
-            </div>
-          )}
+      <div className="flex flex-col gap-1 flex-1">
+        {links.map(item => (
+          <Link
+            key={item.to}
+            to={item.to}
+            onClick={() => setOpen(false)}
+            className={`px-4 py-3 rounded-lg text-sm transition ${
+              location.pathname === item.to
+                ? 'bg-yellow-500/20 text-yellow-400 font-semibold'
+                : 'text-gray-400 hover:text-white hover:bg-yellow-500/10'
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
 
-          <div className="space-y-4">
-            {/* Role selector */}
-            <div className="grid grid-cols-2 gap-3">
-              {['brand', 'influencer'].map(r => (
-                <button
-                  key={r}
-                  onClick={() => setRole(r)}
-                  className={`py-3 rounded-lg text-sm font-semibold border transition capitalize ${
-                    role === r
-                      ? 'bg-yellow-500 text-black border-yellow-500'
-                      : 'bg-black/40 text-gray-400 border-yellow-500/20 hover:border-yellow-500/50'
-                  }`}
-                >
-                  {r === 'brand' ? '🏢 Brand' : '🎬 Influencer'}
-                </button>
-              ))}
-            </div>
-
-            <div>
-              <label className="text-gray-400 text-sm mb-1 block">Full Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="John Doe"
-                className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-400 text-sm mb-1 block">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
-              />
-            </div>
-
-            <div>
-  <label className="text-gray-400 text-sm mb-1 block">Phone Number</label>
-  <input
-    type="tel"
-    value={phone}
-    onChange={e => setPhone(e.target.value)}
-    placeholder="e.g. 0771234567"
-    className="w-full bg-black/40 border border-gold-400/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gold-500 transition"
-  />
-</div>
-
-            <div>
-              <label className="text-gray-400 text-sm mb-1 block">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-400 text-sm mb-1 block">Confirm Password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                className={`w-full bg-black/40 border text-white rounded-lg px-4 py-3 text-sm focus:outline-none transition ${
-                  confirmPassword && password !== confirmPassword
-                    ? 'border-red-500/50 focus:border-red-500'
-                    : 'border-yellow-500/20 focus:border-yellow-500'
-                }`}
-              />
-              {confirmPassword && password !== confirmPassword && (
-                <p className="text-red-400 text-xs mt-1">Passwords do not match</p>
-              )}
-              {confirmPassword && password === confirmPassword && (
-                <p className="text-green-400 text-xs mt-1">✓ Passwords match</p>
-              )}
-            </div>
-
-            {/* Terms and conditions */}
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                id="terms"
-                checked={agreed}
-                onChange={e => setAgreed(e.target.checked)}
-                className="mt-1 accent-yellow-500 w-4 h-4 cursor-pointer"
-              />
-              <label htmlFor="terms" className="text-gray-400 text-sm cursor-pointer">
-                I agree to the{' '}
-                <Link to="/terms" className="text-gold-400 hover:text-gold-300 underline">
-  Terms and Conditions
-</Link>
-{' '}and{' '}
-<Link to="/privacy" className="text-gold-400 hover:text-gold-300 underline">
-  Privacy Policy
-</Link>
-              </label>
-            </div>
-
-            <button
-              onClick={handleSignup}
-              disabled={loading || !agreed}
-              className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-3 rounded-lg transition text-sm"
-            >
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
-          </div>
-
-          <p className="text-gray-400 text-sm text-center mt-6">
-            Already have an account?{' '}
-            <Link to="/login" className="text-yellow-500 hover:text-yellow-400">Login</Link>
-          </p>
-        </div>
+      <div className="mt-auto pt-6 border-t border-yellow-900/30">
+        <div className="text-gray-500 text-xs mb-3 truncate">{userName}</div>
+        <button
+          onClick={handleLogout}
+          className="text-red-400 hover:text-red-300 text-sm transition"
+        >
+          Logout
+        </button>
       </div>
     </div>
+  )
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 p-2 rounded-lg"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="lg:hidden fixed inset-0 bg-black/70 z-40" onClick={() => setOpen(false)} />
+      )}
+
+      <div className={`lg:hidden fixed top-0 left-0 h-full w-64 bg-[#0f0a06] border-r border-yellow-900/30 p-6 z-50 transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+        <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <SidebarContent />
+      </div>
+
+      <aside className="hidden lg:flex flex-col w-64 border-r border-yellow-900/30 p-6 fixed h-full">
+        <SidebarContent />
+      </aside>
+    </>
   )
 }
