@@ -20,7 +20,7 @@ export default function InfluencerHome() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState<string | null>(null)
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
-  const [mySubmissions, setMySubmissions] = useState<Set<string>>(new Set())
+  const [mySubmissions, setMySubmissions] = useState<Record<string, number>>({})
 
   useEffect(() => { loadData() }, [])
 
@@ -41,8 +41,19 @@ export default function InfluencerHome() {
       setCampaigns(camps.filter((c: any) => (c.spent || 0) < c.budget))
     }
 
-    const { data: subs } = await supabase.from('submissions').select('campaign_id').eq('influencer_id', user.id)
-    if (subs) setMySubmissions(new Set(subs.map((s: any) => s.campaign_id)))
+    // Count submissions per campaign for this influencer
+    const { data: subs } = await supabase
+      .from('submissions')
+      .select('campaign_id')
+      .eq('influencer_id', user.id)
+
+    if (subs) {
+      const counts: Record<string, number> = {}
+      subs.forEach((s: any) => {
+        counts[s.campaign_id] = (counts[s.campaign_id] || 0) + 1
+      })
+      setMySubmissions(counts)
+    }
 
     setLoading(false)
   }
@@ -55,15 +66,25 @@ export default function InfluencerHome() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    if (mySubmissions.has(campaignId)) {
-      alert('You have already submitted to this campaign!')
+    // Check budget remaining
+    const camp = campaigns.find(c => c.id === campaignId)
+    if (camp && (camp.spent || 0) >= camp.budget) {
+      alert('This campaign budget has been fully used!')
       setSubmitting(null)
       return
     }
 
-    const camp = campaigns.find(c => c.id === campaignId)
-    if (camp && (camp.spent || 0) >= camp.budget) {
-      alert('This campaign budget has been fully used!')
+    // Check for duplicate URL
+    const { data: existing } = await supabase
+      .from('submissions')
+      .select('id')
+      .eq('campaign_id', campaignId)
+      .eq('influencer_id', user.id)
+      .eq('video_url', url)
+      .single()
+
+    if (existing) {
+      alert('You have already submitted this video URL!')
       setSubmitting(null)
       return
     }
@@ -75,9 +96,12 @@ export default function InfluencerHome() {
       status: 'pending',
     })
 
-    setMySubmissions(prev => new Set([...prev, campaignId]))
+    setMySubmissions(prev => ({
+      ...prev,
+      [campaignId]: (prev[campaignId] || 0) + 1
+    }))
     setVideoUrls(prev => ({ ...prev, [campaignId]: '' }))
-    alert('Submission successful! Admin will track your views.')
+    alert('Video submitted! Admin will track your views.')
     setSubmitting(null)
   }
 
@@ -96,7 +120,7 @@ export default function InfluencerHome() {
       <InfluencerSidebar userName={profile?.display_name} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
         <h1 className="text-white text-2xl font-bold mb-1">Browse Campaigns</h1>
-        <p className="text-gray-400 text-sm mb-8">Pick a campaign, post your video and get paid!</p>
+        <p className="text-gray-400 text-sm mb-8">Post multiple videos per campaign — all views add up!</p>
 
         {campaigns.length === 0 ? (
           <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-12 text-center">
@@ -113,6 +137,11 @@ export default function InfluencerHome() {
                     : <span className="text-5xl">🎬</span>
                   }
                   <span className="absolute top-2 right-2 bg-black/60 text-yellow-400 text-xs px-2 py-0.5 rounded-full capitalize">{camp.type}</span>
+                  {mySubmissions[camp.id] > 0 && (
+                    <span className="absolute top-2 left-2 bg-green-500/80 text-white text-xs px-2 py-0.5 rounded-full">
+                      {mySubmissions[camp.id]} video{mySubmissions[camp.id] > 1 ? 's' : ''} submitted
+                    </span>
+                  )}
                 </div>
 
                 <div className="p-5">
@@ -165,28 +194,28 @@ export default function InfluencerHome() {
                     </div>
                   </div>
 
-                  {mySubmissions.has(camp.id) ? (
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-green-400 text-xs text-center">
-                      ✓ Already submitted to this campaign
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <input
-                        type="url"
-                        value={videoUrls[camp.id] || ''}
-                        onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
-                        placeholder="Paste your video URL..."
-                        className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition"
-                      />
-                      <button
-                        onClick={() => handleSubmit(camp.id)}
-                        disabled={!videoUrls[camp.id] || submitting === camp.id}
-                        className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm"
-                      >
-                        {submitting === camp.id ? 'Submitting...' : 'Submit Video'}
-                      </button>
-                    </div>
-                  )}
+                  {/* Multiple video submission */}
+                  <div className="space-y-2">
+                    {mySubmissions[camp.id] > 0 && (
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-green-400 text-xs text-center mb-2">
+                        ✓ {mySubmissions[camp.id]} video{mySubmissions[camp.id] > 1 ? 's' : ''} submitted — keep posting more to earn more!
+                      </div>
+                    )}
+                    <input
+                      type="url"
+                      value={videoUrls[camp.id] || ''}
+                      onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
+                      placeholder="Paste your video URL to submit..."
+                      className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition"
+                    />
+                    <button
+                      onClick={() => handleSubmit(camp.id)}
+                      disabled={!videoUrls[camp.id] || submitting === camp.id}
+                      className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm"
+                    >
+                      {submitting === camp.id ? 'Submitting...' : '+ Submit Video'}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
