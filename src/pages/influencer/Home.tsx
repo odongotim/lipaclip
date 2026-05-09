@@ -222,13 +222,33 @@ export default function InfluencerHome() {
                       placeholder="Paste your video URL to submit..."
                       className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition"
                     />
-                    <button
-                      onClick={() => handleSubmit(camp.id)}
-                      disabled={!videoUrls[camp.id] || submitting === camp.id}
-                      className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm"
-                    >
-                      {submitting === camp.id ? 'Submitting...' : '+ Submit Video'}
-                    </button>
+                    <div className="space-y-2">
+  {!profile?.tiktok_verified && (
+    <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 text-red-400 text-xs text-center">
+      ⚠️ Verify your socials first to submit videos
+    </div>
+  )}
+  {mySubmissions[camp.id] > 0 && (
+    <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-green-400 text-xs text-center mb-2">
+      ✓ {mySubmissions[camp.id]} video{mySubmissions[camp.id] > 1 ? 's' : ''} submitted — keep posting more to earn more!
+    </div>
+  )}
+  <input
+    type="url"
+    value={videoUrls[camp.id] || ''}
+    onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
+    placeholder="Paste your video URL to submit..."
+    disabled={!profile?.tiktok_verified}
+    className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+  />
+  <button
+    onClick={() => handleSubmit(camp.id)}
+    disabled={!videoUrls[camp.id] || submitting === camp.id || !profile?.tiktok_verified}
+    className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm"
+  >
+    {submitting === camp.id ? 'Submitting...' : '+ Submit Video'}
+  </button>
+</div>
                   </div>
                 </div>
               </div>
