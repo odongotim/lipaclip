@@ -59,12 +59,26 @@ export default function InfluencerHome() {
   }
 
   const handleSubmit = async (campaignId: string) => {
-    const url = videoUrls[campaignId]
-    if (!url) return
-    setSubmitting(campaignId)
+  const url = videoUrls[campaignId]
+  if (!url) return
+  setSubmitting(campaignId)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  // Check if influencer has verified socials
+  if (!profile?.tiktok_verified) {
+    alert('Your social media profile must be verified before you can work on campaigns. Go to My Socials, add your social links and wait for admin verification.')
+    setSubmitting(null)
+    return
+  }
+
+  // Check if influencer has at least one social link
+  if (!profile?.tiktok_url && !profile?.instagram_url && !profile?.youtube_url && !profile?.x_url) {
+    alert('Please go to My Socials and add at least one social media link before submitting to campaigns.')
+    setSubmitting(null)
+    return
+  }
 
     // Check budget remaining
     const camp = campaigns.find(c => c.id === campaignId)
