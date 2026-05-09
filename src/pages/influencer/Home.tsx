@@ -114,60 +114,76 @@ export default function InfluencerHome() {
                 </div>
 
                 <div className="p-5">
-                  {/* Title */}
-                  <h3 className="text-white font-semibold text-sm mb-2">{camp.title}</h3>
+  {/* Title */}
+  <h3 className="text-white font-semibold text-sm mb-2">{camp.title}</h3>
 
-                  {/* Platform icons */}
-                  {camp.platforms && camp.platforms.length > 0 && (
-                    <div className="flex gap-1 mb-3">
-                      {camp.platforms.map(p => (
-                        <span key={p} className="text-lg" title={p}>{PLATFORM_ICONS[p] || '📱'}</span>
-                      ))}
-                    </div>
-                  )}
+  {/* Platform icons */}
+  {camp.platforms && camp.platforms.length > 0 && (
+    <div className="flex gap-1 mb-3">
+      {camp.platforms.map(p => (
+        <span key={p} className="text-lg" title={p}>{PLATFORM_ICONS[p] || '📱'}</span>
+      ))}
+    </div>
+  )}
 
-                  {/* Pay and days */}
-                  <div className="flex items-center gap-4 mb-3">
-                    <div>
-                      <div className="text-yellow-500 font-bold">{fmtUGX(camp.pay_per_1k)}</div>
-                      <div className="text-gray-500 text-xs">per 1,000 views</div>
-                    </div>
-                    <div>
-                      <div className="text-green-400 font-bold">{camp.period_days} days</div>
-                      <div className="text-gray-500 text-xs">campaign period</div>
-                    </div>
-                  </div>
+  {/* Pay and days */}
+  <div className="flex items-center gap-4 mb-3">
+    <div>
+      <div className="text-yellow-500 font-bold">{fmtUGX(camp.pay_per_1k)}</div>
+      <div className="text-gray-500 text-xs">per 1,000 views</div>
+    </div>
+    <div>
+      <div className="text-green-400 font-bold">{camp.period_days} days</div>
+      <div className="text-gray-500 text-xs">campaign period</div>
+    </div>
+  </div>
 
-                  {/* Budget progress */}
-                  <div className="mb-4">
-                    <div className="w-full bg-yellow-900/30 rounded-full h-2">
-                      <div className="bg-yellow-500 h-2 rounded-full transition-all" style={{ width: `${budgetPct(camp)}%` }} />
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>{fmtUGX(camp.spent || 0)} used</span>
-                      <span className="text-green-400">{fmtUGX(remaining(camp))} left</span>
-                    </div>
-                  </div>
+  {/* Source URL / Download */}
+  {camp.source_url && (
+    <a href={camp.source_url} target="_blank" rel="noopener noreferrer"
+      className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-yellow-400 text-xs font-semibold mb-3 hover:bg-yellow-500/20 transition">
+      📥 Download Campaign Material
+    </a>
+  )}
 
-                  {/* Submit */}
-                  {mySubmissions.has(camp.id) ? (
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-green-400 text-xs text-center">
-                      ✓ Already submitted to this campaign
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <input type="url" value={videoUrls[camp.id] || ''}
-                        onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
-                        placeholder="Paste your video URL..."
-                        className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition" />
-                      <button onClick={() => handleSubmit(camp.id)}
-                        disabled={!videoUrls[camp.id] || submitting === camp.id}
-                        className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm">
-                        {submitting === camp.id ? 'Submitting...' : 'Submit Video'}
-                      </button>
-                    </div>
-                  )}
-                </div>
+  {/* Instructions */}
+  {camp.instructions && (
+    <div className="bg-black/30 rounded-lg p-3 mb-3">
+      <p className="text-gray-400 text-xs font-semibold mb-1">📋 Posting Instructions:</p>
+      <p className="text-gray-300 text-xs leading-relaxed">{camp.instructions}</p>
+    </div>
+  )}
+
+  {/* Budget progress */}
+  <div className="mb-4">
+    <div className="w-full bg-yellow-900/30 rounded-full h-2">
+      <div className="bg-yellow-500 h-2 rounded-full transition-all" style={{ width: `${budgetPct(camp)}%` }} />
+    </div>
+    <div className="flex justify-between text-xs text-gray-500 mt-1">
+      <span>{fmtUGX(camp.spent || 0)} used</span>
+      <span className="text-green-400">{fmtUGX(remaining(camp))} left</span>
+    </div>
+  </div>
+
+  {/* Submit */}
+  {mySubmissions.has(camp.id) ? (
+    <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-green-400 text-xs text-center">
+      ✓ Already submitted to this campaign
+    </div>
+  ) : (
+    <div className="space-y-2">
+      <input type="url" value={videoUrls[camp.id] || ''}
+        onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
+        placeholder="Paste your video URL..."
+        className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition" />
+      <button onClick={() => handleSubmit(camp.id)}
+        disabled={!videoUrls[camp.id] || submitting === camp.id}
+        className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm">
+        {submitting === camp.id ? 'Submitting...' : 'Submit Video'}
+      </button>
+    </div>
+  )}
+</div>
               </div>
             ))}
           </div>
