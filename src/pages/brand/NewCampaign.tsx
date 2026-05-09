@@ -158,7 +158,7 @@ export default function NewCampaign() {
               <div className="space-y-3">
                 {[
                   { step: '1', title: 'Dial USSD code', desc: <span>On your phone dial <span className="text-yellow-500 font-bold text-base">*165*3#</span></span> },
-                  { step: '2', title: 'Enter Merchant Code', desc: <span>Merchant code: <span className="text-yellow-500 font-bold text-base">852760</span></span> },
+                  { step: '2', title: 'Enter Merchant Code', desc: <span>Merchant code: <span className="text-yellow-500 font-bold text-base">934101</span></span> },
                   { step: '3', title: 'Enter Amount', desc: <span>Amount: <span className="text-yellow-500 font-bold text-base">{fmtUGX(total)}</span></span> },
                   { step: '4', title: 'Get Transaction ID', desc: <span>You will receive an SMS with a Transaction ID</span> },
                 ].map(item => (
