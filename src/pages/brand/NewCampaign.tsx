@@ -34,7 +34,6 @@ export default function NewCampaign() {
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
-  const [step, setStep] = useState<'form' | 'paying'>('form')
 
   useEffect(() => { loadData() }, [])
 
