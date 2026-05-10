@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
+import PesapalCallback from './pages/PesapalCallback'
 import BrandDashboard from './pages/brand/Dashboard'
 import NewCampaign from './pages/brand/NewCampaign'
 import BrandSettings from './pages/brand/Settings'
@@ -27,6 +28,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/pesapal-callback" element={<PesapalCallback />} />
         <Route path="/brand" element={<BrandDashboard />} />
         <Route path="/brand/new-campaign" element={<NewCampaign />} />
         <Route path="/brand/settings" element={<BrandSettings />} />
