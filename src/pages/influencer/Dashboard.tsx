@@ -59,7 +59,9 @@ export default function InfluencerDashboard() {
   }
 
   const totalEarned = submissions.reduce((a, s) => a + (s.earnings || 0), 0)
-  const availableForWithdraw = submissions.filter(s => s.status === 'approved').reduce((a, s) => a + (s.earnings || 0), 0)
+  const availableForWithdraw = submissions
+  .filter(s => s.status === 'approved' && s.campaigns?.status === 'completed')
+  .reduce((a, s) => a + (s.earnings || 0), 0)
   const totalViews = submissions.reduce((a, s) => a + (s.views || 0), 0)
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
 
