@@ -31,11 +31,10 @@ export default function NewCampaign() {
   const [periodDays, setPeriodDays] = useState(7)
   const [budget, setBudget] = useState(0)
   const [platforms, setPlatforms] = useState<string[]>(['tiktok'])
-  const [txId, setTxId] = useState('')
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
-  const [step, setStep] = useState<'form' | 'payment'>('form')
+  const [step, setStep] = useState<'form' | 'paying'>('form')
 
   useEffect(() => { loadData() }, [])
 
@@ -74,26 +73,26 @@ export default function NewCampaign() {
     setError('')
   }
 
-  const handleProceedToPayment = () => {
+  const handleValidate = () => {
     setError('')
-    if (!title.trim()) { setError('Campaign title is required'); return }
-    if (!instructions.trim()) { setError('Posting instructions are required'); return }
+    if (!title.trim()) { setError('Campaign title is required'); return false }
+    if (!instructions.trim()) { setError('Posting instructions are required'); return false }
     if (type !== 'ugc') {
-      if (useLink && !sourceUrl.trim()) { setError('Source URL is required'); return }
-      if (!useLink && !sourceFile) { setError('Please upload a file or use a link'); return }
+      if (useLink && !sourceUrl.trim()) { setError('Source URL is required'); return false }
+      if (!useLink && !sourceFile) { setError('Please upload a file or use a link'); return false }
     }
-    if (platforms.length === 0) { setError('Please select at least one platform'); return }
-    if (payPer1k < getMinPerk()) { setError(`Min pay per 1k views is ${fmtUGX(getMinPerk())}`); return }
-    if (payPer1k > getMaxPerk()) { setError(`Max pay per 1k views is ${fmtUGX(getMaxPerk())}`); return }
-    if (budget < getMinBudget()) { setError(`Min budget is ${fmtUGX(getMinBudget())}`); return }
-    if (budget > getMaxBudget()) { setError(`Max budget is ${fmtUGX(getMaxBudget())}`); return }
-    setStep('payment')
+    if (platforms.length === 0) { setError('Please select at least one platform'); return false }
+    if (payPer1k < getMinPerk()) { setError(`Min pay per 1k views is ${fmtUGX(getMinPerk())}`); return false }
+    if (payPer1k > getMaxPerk()) { setError(`Max pay per 1k views is ${fmtUGX(getMaxPerk())}`); return false }
+    if (budget < getMinBudget()) { setError(`Min budget is ${fmtUGX(getMinBudget())}`); return false }
+    if (budget > getMaxBudget()) { setError(`Max budget is ${fmtUGX(getMaxBudget())}`); return false }
+    return true
   }
 
-  const handleSubmit = async () => {
-    setError('')
-    if (!txId.trim()) { setError('Please enter your Mobile Money transaction ID'); return }
+  const handlePayWithPesapal = async () => {
+    if (!handleValidate()) return
     setLoading(true)
+    setError('')
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
@@ -109,93 +108,72 @@ export default function NewCampaign() {
         const { error: uploadError } = await supabase.storage
           .from('campaign-files')
           .upload(fileName, sourceFile)
-
         if (uploadError) throw new Error('File upload failed: ' + uploadError.message)
         const { data: { publicUrl } } = supabase.storage.from('campaign-files').getPublicUrl(fileName)
         finalSourceUrl = publicUrl
         setUploading(false)
       }
 
+      const reference = `LC-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+      // Create campaign as pending
       const { data: campaign, error: campError } = await supabase.from('campaigns').insert({
         brand_id: user.id, title, type,
         source_url: type !== 'ugc' ? finalSourceUrl : null,
         instructions, pay_per_1k: payPer1k, period_days: periodDays, budget,
         thumbnail_url: profile?.logo_url || null,
-        platforms: platforms,
+        platforms,
         status: 'pending',
       }).select().single()
 
       if (campError || !campaign) throw new Error(campError?.message || 'Failed to create campaign')
 
-      await supabase.from('deposits').insert({
+      // Create deposit as pending
+      const { data: deposit } = await supabase.from('deposits').insert({
         brand_id: user.id, campaign_id: campaign.id,
         amount: budget, service_fee: fee, total_charged: total,
-        pesapal_merchant_reference: txId,
+        pesapal_merchant_reference: reference,
         status: 'pending',
+      }).select().single()
+
+      if (!deposit) throw new Error('Failed to create deposit')
+
+      // Call Supabase Edge Function
+      const { data: pesapalData, error: pesapalError } = await supabase.functions.invoke('create-pesapal-order', {
+        body: {
+          orderData: {
+            id: reference,
+            currency: 'UGX',
+            amount: total,
+            description: `LipaClip Campaign: ${title}`,
+            callback_url: `${window.location.origin}/pesapal-callback`,
+            notification_id: reference,
+            billing_address: {
+              email_address: user.email,
+              first_name: profile?.display_name || 'Brand',
+            }
+          }
+        }
       })
 
-      alert('Campaign submitted! Admin will verify your payment and activate it.')
-      navigate('/brand')
+      if (pesapalError) throw new Error(pesapalError.message)
+      if (pesapalData?.error) throw new Error(pesapalData.error)
+      if (!pesapalData?.redirect_url) throw new Error('No redirect URL from Pesapal: ' + JSON.stringify(pesapalData))
+
+      // Save tracking ID
+      await supabase.from('deposits').update({
+        pesapal_order_tracking_id: pesapalData.order_tracking_id,
+      }).eq('id', deposit.id)
+
+      // Redirect to Pesapal
+      window.location.href = pesapalData.redirect_url
+
     } catch (err: any) {
-      setError(err.message || 'Failed to submit')
+      console.error('Payment error:', err)
+      setError(err.message || 'Payment failed')
       setLoading(false)
       setUploading(false)
     }
-  }
-
-  if (step === 'payment') {
-    return (
-      <div className="min-h-screen bg-[#0f0a06] flex">
-        <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
-        <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-          <h1 className="text-white text-2xl font-bold mb-1">Complete Payment</h1>
-          <p className="text-gray-400 text-sm mb-8">Pay via Mobile Money to activate your campaign</p>
-          <div className="max-w-lg">
-            {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
-
-            <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 mb-6">
-              <h2 className="text-white font-bold text-lg mb-4">📱 Payment Instructions</h2>
-              <div className="space-y-3">
-                {[
-                  { step: '1', title: 'Dial USSD code', desc: <span>On your phone dial <span className="text-yellow-500 font-bold text-base">*165*3#</span></span> },
-                  { step: '2', title: 'Enter Merchant Code', desc: <span>Merchant code: <span className="text-yellow-500 font-bold text-base">934101</span></span> },
-                  { step: '3', title: 'Enter Amount', desc: <span>Amount: <span className="text-yellow-500 font-bold text-base">{fmtUGX(total)}</span></span> },
-                  { step: '4', title: 'Get Transaction ID', desc: <span>You will receive an SMS with a Transaction ID</span> },
-                ].map(item => (
-                  <div key={item.step} className="flex items-start gap-3">
-                    <span className="bg-yellow-500 text-black text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">{item.step}</span>
-                    <div><p className="text-white text-sm font-semibold">{item.title}</p><p className="text-gray-400 text-xs mt-0.5">{item.desc}</p></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-black/40 border border-yellow-500/20 rounded-xl p-4 space-y-2 mb-6">
-              <h3 className="text-white font-semibold text-sm mb-3">Payment Summary</h3>
-              <div className="flex justify-between text-sm"><span className="text-gray-400">Campaign</span><span className="text-white truncate ml-4">{title}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-400">Budget</span><span className="text-white">{fmtUGX(budget)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-400">Service Fee ({settings?.deposit_fee_pct}%)</span><span className="text-yellow-500">{fmtUGX(fee)}</span></div>
-              <div className="border-t border-yellow-900/30 pt-2 flex justify-between text-sm font-bold"><span className="text-white">Total</span><span className="text-yellow-500">{fmtUGX(total)}</span></div>
-            </div>
-
-            <div className="mb-4">
-              <label className="text-gray-400 text-sm mb-1 block">Mobile Money Transaction ID</label>
-              <input type="text" value={txId} onChange={e => setTxId(e.target.value)} placeholder="e.g. TXN1234567890"
-                className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition" />
-              <p className="text-gray-500 text-xs mt-1">Enter the transaction ID from your Mobile Money SMS</p>
-            </div>
-
-            <div className="flex gap-3">
-              <button onClick={() => setStep('form')} className="flex-1 border border-yellow-500/30 text-gray-400 font-semibold py-3 rounded-xl text-sm hover:border-yellow-500/50 transition">← Back</button>
-              <button onClick={handleSubmit} disabled={loading || uploading || !txId.trim()}
-                className="flex-1 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition text-sm">
-                {uploading ? 'Uploading...' : loading ? 'Submitting...' : 'Submit Campaign'}
-              </button>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
   }
 
   return (
@@ -205,9 +183,12 @@ export default function NewCampaign() {
         <h1 className="text-white text-2xl font-bold mb-1">New Campaign</h1>
         <p className="text-gray-400 text-sm mb-8">Fill in the details to launch your campaign</p>
         <div className="max-w-2xl">
-          {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg mb-6">
+              {error}
+            </div>
+          )}
 
-          {/* Logo preview */}
           {profile?.logo_url && (
             <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 mb-4 flex items-center gap-3">
               <img src={profile.logo_url} alt="Brand logo" className="w-12 h-12 rounded-xl object-cover" />
@@ -219,12 +200,18 @@ export default function NewCampaign() {
           )}
 
           <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 space-y-5">
+
             {/* Campaign Type */}
             <div>
               <label className="text-gray-400 text-sm mb-2 block">Campaign Type</label>
               <div className="grid grid-cols-3 gap-3">
-                {[{ value: 'logo', label: '🏷️ Logo', desc: 'Brand logo promotion' }, { value: 'clipping', label: '✂️ Clipping', desc: 'Clip & repost content' }, { value: 'ugc', label: '🎨 UGC', desc: 'User generated content' }].map(t => (
-                  <button key={t.value} onClick={() => setType(t.value)} className={`p-3 rounded-xl border text-left transition ${type === t.value ? 'bg-yellow-500/20 border-yellow-500 text-white' : 'bg-black/40 border-yellow-500/20 text-gray-400 hover:border-yellow-500/50'}`}>
+                {[
+                  { value: 'logo', label: '🏷️ Logo', desc: 'Brand logo promotion' },
+                  { value: 'clipping', label: '✂️ Clipping', desc: 'Clip & repost content' },
+                  { value: 'ugc', label: '🎨 UGC', desc: 'User generated content' },
+                ].map(t => (
+                  <button key={t.value} onClick={() => setType(t.value)}
+                    className={`p-3 rounded-xl border text-left transition ${type === t.value ? 'bg-yellow-500/20 border-yellow-500 text-white' : 'bg-black/40 border-yellow-500/20 text-gray-400 hover:border-yellow-500/50'}`}>
                     <div className="font-semibold text-sm">{t.label}</div>
                     <div className="text-xs mt-0.5 opacity-70">{t.desc}</div>
                   </button>
@@ -248,20 +235,28 @@ export default function NewCampaign() {
             {/* Title */}
             <div>
               <label className="text-gray-400 text-sm mb-1 block">Campaign Title</label>
-              <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Promote Our New App"
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                placeholder="e.g. Promote Our New App"
                 className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition" />
             </div>
 
-            {/* Source material - only for logo and clipping */}
+            {/* Source material */}
             {type !== 'ugc' && (
               <div>
                 <label className="text-gray-400 text-sm mb-2 block">Campaign Material</label>
                 <div className="flex gap-2 mb-3">
-                  <button onClick={() => setUseLink(true)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${useLink ? 'bg-yellow-500/20 border-yellow-500 text-white' : 'bg-black/40 border-yellow-500/20 text-gray-400'}`}>🔗 Use Link</button>
-                  <button onClick={() => setUseLink(false)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${!useLink ? 'bg-yellow-500/20 border-yellow-500 text-white' : 'bg-black/40 border-yellow-500/20 text-gray-400'}`}>📁 Upload File</button>
+                  <button onClick={() => setUseLink(true)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${useLink ? 'bg-yellow-500/20 border-yellow-500 text-white' : 'bg-black/40 border-yellow-500/20 text-gray-400'}`}>
+                    🔗 Use Link
+                  </button>
+                  <button onClick={() => setUseLink(false)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${!useLink ? 'bg-yellow-500/20 border-yellow-500 text-white' : 'bg-black/40 border-yellow-500/20 text-gray-400'}`}>
+                    📁 Upload File
+                  </button>
                 </div>
                 {useLink ? (
-                  <input type="url" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} placeholder="https://drive.google.com/..."
+                  <input type="url" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)}
+                    placeholder="https://drive.google.com/..."
                     className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition" />
                 ) : (
                   <div>
@@ -284,7 +279,10 @@ export default function NewCampaign() {
 
             {/* Pay per 1k */}
             <div>
-              <label className="text-gray-400 text-sm mb-1 block">Pay per 1,000 views (UGX) {settings && <span className="text-gray-600 ml-2 text-xs">Min: {fmtUGX(getMinPerk())} — Max: {fmtUGX(getMaxPerk())}</span>}</label>
+              <label className="text-gray-400 text-sm mb-1 block">
+                Pay per 1,000 views (UGX)
+                {settings && <span className="text-gray-600 ml-2 text-xs">Min: {fmtUGX(getMinPerk())} — Max: {fmtUGX(getMaxPerk())}</span>}
+              </label>
               <input type="number" value={payPer1k || ''} onChange={e => setPayPer1k(Number(e.target.value))}
                 className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition" />
             </div>
@@ -298,22 +296,40 @@ export default function NewCampaign() {
 
             {/* Budget */}
             <div>
-              <label className="text-gray-400 text-sm mb-1 block">Budget (UGX) {settings && <span className="text-gray-600 ml-2 text-xs">Min: {fmtUGX(getMinBudget())} — Max: {fmtUGX(getMaxBudget())}</span>}</label>
+              <label className="text-gray-400 text-sm mb-1 block">
+                Budget (UGX)
+                {settings && <span className="text-gray-600 ml-2 text-xs">Min: {fmtUGX(getMinBudget())} — Max: {fmtUGX(getMaxBudget())}</span>}
+              </label>
               <input type="number" value={budget || ''} onChange={e => setBudget(Number(e.target.value))}
                 className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition" />
             </div>
 
+            {/* Summary */}
             {budget > 0 && (
               <div className="bg-black/40 border border-yellow-500/20 rounded-xl p-4 space-y-2">
                 <h3 className="text-white font-semibold text-sm mb-3">Payment Summary</h3>
-                <div className="flex justify-between text-sm"><span className="text-gray-400">Campaign Budget</span><span className="text-white">{fmtUGX(budget)}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-400">Service Fee ({settings?.deposit_fee_pct}%)</span><span className="text-yellow-500">{fmtUGX(fee)}</span></div>
-                <div className="border-t border-yellow-900/30 pt-2 flex justify-between text-sm font-bold"><span className="text-white">Total to Pay</span><span className="text-yellow-500">{fmtUGX(total)}</span></div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Campaign Budget</span>
+                  <span className="text-white">{fmtUGX(budget)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Service Fee ({settings?.deposit_fee_pct}%)</span>
+                  <span className="text-yellow-500">{fmtUGX(fee)}</span>
+                </div>
+                <div className="border-t border-yellow-900/30 pt-2 flex justify-between text-sm font-bold">
+                  <span className="text-white">Total to Pay</span>
+                  <span className="text-yellow-500">{fmtUGX(total)}</span>
+                </div>
               </div>
             )}
 
-            <button onClick={handleProceedToPayment} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-xl transition text-sm">
-              Proceed to Payment →
+            {/* Pay with Pesapal */}
+            <button
+              onClick={handlePayWithPesapal}
+              disabled={loading || uploading}
+              className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-3 rounded-xl transition text-sm"
+            >
+              {uploading ? 'Uploading file...' : loading ? 'Redirecting to Pesapal...' : `Pay ${budget > 0 ? fmtUGX(total) : ''} with Pesapal →`}
             </button>
           </div>
         </div>
