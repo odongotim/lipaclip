@@ -59,26 +59,12 @@ export default function InfluencerHome() {
   }
 
   const handleSubmit = async (campaignId: string) => {
-  const url = videoUrls[campaignId]
-  if (!url) return
-  setSubmitting(campaignId)
+    const url = videoUrls[campaignId]
+    if (!url) return
+    setSubmitting(campaignId)
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
-
-  // Check if influencer has verified socials
-  if (!profile?.tiktok_verified) {
-    alert('Your social media profile must be verified before you can work on campaigns. Go to My Socials, add your social links and wait for admin verification.')
-    setSubmitting(null)
-    return
-  }
-
-  // Check if influencer has at least one social link
-  if (!profile?.tiktok_url && !profile?.instagram_url && !profile?.youtube_url && !profile?.x_url) {
-    alert('Please go to My Socials and add at least one social media link before submitting to campaigns.')
-    setSubmitting(null)
-    return
-  }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
 
     // Check budget remaining
     const camp = campaigns.find(c => c.id === campaignId)
@@ -222,33 +208,13 @@ export default function InfluencerHome() {
                       placeholder="Paste your video URL to submit..."
                       className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition"
                     />
-                    <div className="space-y-2">
-  {!profile?.tiktok_verified && (
-    <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 text-red-400 text-xs text-center">
-      ⚠️ Verify your socials first to submit videos
-    </div>
-  )}
-  {mySubmissions[camp.id] > 0 && (
-    <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-green-400 text-xs text-center mb-2">
-      ✓ {mySubmissions[camp.id]} video{mySubmissions[camp.id] > 1 ? 's' : ''} submitted — keep posting more to earn more!
-    </div>
-  )}
-  <input
-    type="url"
-    value={videoUrls[camp.id] || ''}
-    onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
-    placeholder="Paste your video URL to submit..."
-    disabled={!profile?.tiktok_verified}
-    className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-  />
-  <button
-    onClick={() => handleSubmit(camp.id)}
-    disabled={!videoUrls[camp.id] || submitting === camp.id || !profile?.tiktok_verified}
-    className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm"
-  >
-    {submitting === camp.id ? 'Submitting...' : '+ Submit Video'}
-  </button>
-</div>
+                    <button
+                      onClick={() => handleSubmit(camp.id)}
+                      disabled={!videoUrls[camp.id] || submitting === camp.id}
+                      className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm"
+                    >
+                      {submitting === camp.id ? 'Submitting...' : '+ Submit Video'}
+                    </button>
                   </div>
                 </div>
               </div>
