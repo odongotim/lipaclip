@@ -1,56 +1,113 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import AdminSidebar from '../../components/AdminSidebar'
+import InfluencerSidebar from '../../components/InfluencerSidebar'
 
-export default function AdminDashboard() {
+type Campaign = {
+  id: string; title: string; type: string; thumbnail_url: string | null
+  pay_per_1k: number; budget: number; spent: number; period_days: number
+  platforms: string[]; source_url: string | null; instructions: string | null
+}
+
+const PLATFORM_ICONS: Record<string, string> = {
+  tiktok: '🎵', instagram: '📸', youtube: '▶️', x: '🐦'
+}
+
+export default function InfluencerHome() {
   const navigate = useNavigate()
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [profile, setProfile] = useState<any>(null)
-  const [stats, setStats] = useState({ totalDeposited: 0, totalEarned: 0, totalProfit: 0, totalUsers: 0, brands: 0, influencers: 0, pendingWithdrawals: 0 })
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState<string | null>(null)
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
+  const [mySubmissions, setMySubmissions] = useState<Record<string, number>>({})
 
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
-
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    if (!prof || prof.role !== 'admin') { navigate('/'); return }
+    if (prof?.role !== 'influencer') { navigate('/'); return }
     setProfile(prof)
 
-    try {
-      const [depositsRes, subsRes, profilesRes, withdrawalsRes] = await Promise.all([
-        supabase.from('deposits').select('total_charged, status'),
-        supabase.from('submissions').select('earnings'),
-        supabase.from('profiles').select('id, role'),
-        supabase.from('withdrawals').select('id').eq('status', 'pending'),
-      ])
+    const { data: camps } = await supabase
+      .from('campaigns')
+      .select('id, title, type, thumbnail_url, pay_per_1k, budget, spent, period_days, platforms, source_url, instructions')
+      .eq('status', 'live')
+      .order('created_at', { ascending: false })
 
-      const deposits = depositsRes.data || []
-      const subs = subsRes.data || []
-      const profiles = profilesRes.data || []
-      const withdrawals = withdrawalsRes.data || []
-
-      const totalDep = deposits.filter((d: any) => d.status === 'completed').reduce((a: number, d: any) => a + (d.total_charged || 0), 0)
-      const totalEarn = subs.reduce((a: number, s: any) => a + (s.earnings || 0), 0)
-
-      setStats({
-        totalDeposited: totalDep,
-        totalEarned: totalEarn,
-        totalProfit: totalDep - totalEarn,
-        totalUsers: profiles.filter((p: any) => p.role !== 'admin').length,
-        brands: profiles.filter((p: any) => p.role === 'brand').length,
-        influencers: profiles.filter((p: any) => p.role === 'influencer').length,
-        pendingWithdrawals: withdrawals.length,
-      })
-    } catch (err) {
-      console.error('Error loading stats:', err)
+    if (camps) {
+      setCampaigns(camps.filter((c: any) => (c.spent || 0) < c.budget))
     }
+
+    // Count submissions per campaign for this influencer
+    const { data: subs } = await supabase
+      .from('submissions')
+      .select('campaign_id')
+      .eq('influencer_id', user.id)
+
+    if (subs) {
+      const counts: Record<string, number> = {}
+      subs.forEach((s: any) => {
+        counts[s.campaign_id] = (counts[s.campaign_id] || 0) + 1
+      })
+      setMySubmissions(counts)
+    }
+
     setLoading(false)
   }
 
+  const handleSubmit = async (campaignId: string) => {
+    const url = videoUrls[campaignId]
+    if (!url) return
+    setSubmitting(campaignId)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Check budget remaining
+    const camp = campaigns.find(c => c.id === campaignId)
+    if (camp && (camp.spent || 0) >= camp.budget) {
+      alert('This campaign budget has been fully used!')
+      setSubmitting(null)
+      return
+    }
+
+    // Check for duplicate URL
+    const { data: existing } = await supabase
+      .from('submissions')
+      .select('id')
+      .eq('campaign_id', campaignId)
+      .eq('influencer_id', user.id)
+      .eq('video_url', url)
+      .single()
+
+    if (existing) {
+      alert('You have already submitted this video URL!')
+      setSubmitting(null)
+      return
+    }
+
+    await supabase.from('submissions').insert({
+      campaign_id: campaignId,
+      influencer_id: user.id,
+      video_url: url,
+      status: 'pending',
+    })
+
+    setMySubmissions(prev => ({
+      ...prev,
+      [campaignId]: (prev[campaignId] || 0) + 1
+    }))
+    setVideoUrls(prev => ({ ...prev, [campaignId]: '' }))
+    alert('Video submitted! Admin will track your views.')
+    setSubmitting(null)
+  }
+
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
+  const budgetPct = (camp: Campaign) => Math.min(((camp.spent || 0) / camp.budget) * 100, 100)
+  const remaining = (camp: Campaign) => camp.budget - (camp.spent || 0)
 
   if (loading) return (
     <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center">
@@ -60,54 +117,110 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0f0a06] flex">
-      <AdminSidebar userName={profile?.display_name} />
+      <InfluencerSidebar userName={profile?.display_name} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-white text-2xl font-bold mb-1">Admin Dashboard</h1>
-        <p className="text-gray-400 text-sm mb-8">Platform overview and management</p>
+        <h1 className="text-white text-2xl font-bold mb-1">Browse Campaigns</h1>
+        <p className="text-gray-400 text-sm mb-8">Post multiple videos per campaign — all views add up!</p>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total Deposited', value: fmtUGX(stats.totalDeposited), color: 'text-yellow-500' },
-            { label: 'Total Earned', value: fmtUGX(stats.totalEarned), color: 'text-green-400' },
-            { label: 'Profit', value: fmtUGX(stats.totalProfit), color: 'text-blue-400' },
-            { label: 'Total Users', value: stats.totalUsers.toString(), color: 'text-purple-400' },
-          ].map(stat => (
-            <div key={stat.label} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-5">
-              <div className={`text-2xl font-bold ${stat.color} mb-1`}>{stat.value}</div>
-              <div className="text-gray-400 text-xs">{stat.label}</div>
-            </div>
-          ))}
-        </div>
+        {campaigns.length === 0 ? (
+          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-12 text-center">
+            <div className="text-4xl mb-3">🎬</div>
+            <p className="text-gray-400 text-sm">No live campaigns at the moment. Check back soon!</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {campaigns.map(camp => (
+              <div key={camp.id} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl overflow-hidden">
+                <div className="w-full h-40 bg-yellow-500/10 flex items-center justify-center overflow-hidden relative">
+                  {camp.thumbnail_url
+                    ? <img src={camp.thumbnail_url} alt={camp.title} className="w-full h-full object-cover" />
+                    : <span className="text-5xl">🎬</span>
+                  }
+                  <span className="absolute top-2 right-2 bg-black/60 text-yellow-400 text-xs px-2 py-0.5 rounded-full capitalize">{camp.type}</span>
+                  {mySubmissions[camp.id] > 0 && (
+                    <span className="absolute top-2 left-2 bg-green-500/80 text-white text-xs px-2 py-0.5 rounded-full">
+                      {mySubmissions[camp.id]} video{mySubmissions[camp.id] > 1 ? 's' : ''} submitted
+                    </span>
+                  )}
+                </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          {[
-            { label: 'Brands', value: stats.brands, color: 'text-yellow-500' },
-            { label: 'Influencers', value: stats.influencers, color: 'text-green-400' },
-            { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, color: 'text-red-400' },
-          ].map(stat => (
-            <div key={stat.label} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 text-center">
-              <div className={`text-4xl font-bold ${stat.color} mb-2`}>{stat.value}</div>
-              <div className="text-gray-400 text-sm">{stat.label}</div>
-            </div>
-          ))}
-        </div>
+                <div className="p-5">
+                  <h3 className="text-white font-semibold text-sm mb-2">{camp.title}</h3>
 
-        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6">
-          <h2 className="text-white font-semibold mb-4">Quick Actions</h2>
-          <div className="grid md:grid-cols-2 gap-3">
-            {[
-              { href: '/admin/users', icon: '👥', title: 'Manage Users', desc: 'View, suspend, or delete users' },
-              { href: '/admin/withdrawals', icon: '💰', title: 'Process Withdrawals', desc: `${stats.pendingWithdrawals} pending approval` },
-              { href: '/admin/verifications', icon: '✅', title: 'Verify Influencers', desc: 'Approve influencer socials' },
-              { href: '/admin/settings', icon: '⚙️', title: 'Settings', desc: 'Configure platform settings' },
-            ].map(item => (
-              <a key={item.href} href={item.href} className="block bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 transition">
-                <div className="text-yellow-400 font-semibold text-sm">{item.icon} {item.title}</div>
-                <div className="text-gray-500 text-xs mt-1">{item.desc}</div>
-              </a>
+                  {camp.platforms && camp.platforms.length > 0 && (
+                    <div className="flex gap-1 mb-3">
+                      {camp.platforms.map(p => (
+                        <span key={p} className="text-lg" title={p}>{PLATFORM_ICONS[p] || '📱'}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-4 mb-3">
+                    <div>
+                      <div className="text-yellow-500 font-bold">{fmtUGX(camp.pay_per_1k)}</div>
+                      <div className="text-gray-500 text-xs">per 1,000 views</div>
+                    </div>
+                    <div>
+                      <div className="text-green-400 font-bold">{camp.period_days} days</div>
+                      <div className="text-gray-500 text-xs">campaign period</div>
+                    </div>
+                  </div>
+
+                  {camp.source_url && (
+                    <a
+                      href={camp.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-yellow-400 text-xs font-semibold mb-3 hover:bg-yellow-500/20 transition"
+                    >
+                      📥 Download Campaign Material
+                    </a>
+                  )}
+
+                  {camp.instructions && (
+                    <div className="bg-black/30 rounded-lg p-3 mb-3">
+                      <p className="text-gray-400 text-xs font-semibold mb-1">📋 Posting Instructions:</p>
+                      <p className="text-gray-300 text-xs leading-relaxed whitespace-pre-line">{camp.instructions}</p>
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <div className="w-full bg-yellow-900/30 rounded-full h-2">
+                      <div className="bg-yellow-500 h-2 rounded-full transition-all" style={{ width: `${budgetPct(camp)}%` }} />
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>{fmtUGX(camp.spent || 0)} used</span>
+                      <span className="text-green-400">{fmtUGX(remaining(camp))} left</span>
+                    </div>
+                  </div>
+
+                  {/* Multiple video submission */}
+                  <div className="space-y-2">
+                    {mySubmissions[camp.id] > 0 && (
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-green-400 text-xs text-center mb-2">
+                        ✓ {mySubmissions[camp.id]} video{mySubmissions[camp.id] > 1 ? 's' : ''} submitted — keep posting more to earn more!
+                      </div>
+                    )}
+                    <input
+                      type="url"
+                      value={videoUrls[camp.id] || ''}
+                      onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
+                      placeholder="Paste your video URL to submit..."
+                      className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 transition"
+                    />
+                    <button
+                      onClick={() => handleSubmit(camp.id)}
+                      disabled={!videoUrls[camp.id] || submitting === camp.id}
+                      className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm"
+                    >
+                      {submitting === camp.id ? 'Submitting...' : '+ Submit Video'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+        )}
       </main>
     </div>
   )
