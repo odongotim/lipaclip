@@ -1,184 +1,159 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../../lib/supabase'
+import InfluencerSidebar from '../../components/InfluencerSidebar'
 
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+type Submission = {
+  id: string; video_url: string; views: number; earnings: number
+  status: string; submitted_at: string
+  campaigns: { id: string; title: string; type: string; pay_per_1k: number }
 }
 
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
+type CampaignSummary = {
+  id: string; title: string; totalViews: number; totalEarnings: number; videos: number
 }
 
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
+export default function InfluencerDashboard() {
+  const navigate = useNavigate()
+  const [profile, setProfile] = useState<any>(null)
+  const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [campaignSummaries, setCampaignSummaries] = useState<CampaignSummary[]>([])
+  const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState<string | null>(null)
 
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
-}
+  useEffect(() => { loadData() }, [])
 
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
+  const loadData = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { navigate('/login'); return }
+    const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    if (!prof) { navigate('/login'); return }
+    if (prof.role !== 'influencer') { navigate('/'); return }
+    setProfile(prof)
 
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
+    const { data: subs } = await supabase
+      .from('submissions')
+      .select('*, campaigns(id, title, type, pay_per_1k)')
+      .eq('influencer_id', user.id)
+      .order('submitted_at', { ascending: false })
 
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
+    if (subs) {
+      setSubmissions(subs as any)
 
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
+      // Group by campaign
+      const grouped: Record<string, CampaignSummary> = {}
+      subs.forEach((s: any) => {
+        const campId = s.campaigns?.id || s.campaign_id
+        const campTitle = s.campaigns?.title || 'Unknown'
+        if (!grouped[campId]) {
+          grouped[campId] = { id: campId, title: campTitle, totalViews: 0, totalEarnings: 0, videos: 0 }
+        }
+        grouped[campId].totalViews += s.views || 0
+        grouped[campId].totalEarnings += s.earnings || 0
+        grouped[campId].videos += 1
+      })
+      setCampaignSummaries(Object.values(grouped))
     }
 
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
-  width: 100%;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
+    setLoading(false)
   }
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
+  const totalEarned = submissions.reduce((a, s) => a + (s.earnings || 0), 0)
+  const availableForWithdraw = submissions.filter(s => s.status === 'approved').reduce((a, s) => a + (s.earnings || 0), 0)
+  const totalViews = submissions.reduce((a, s) => a + (s.views || 0), 0)
+  const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center">
+      <div className="text-yellow-500 animate-pulse text-xl">Loading...</div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-[#0f0a06] flex">
+      <InfluencerSidebar userName={profile?.display_name} />
+      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+        <h1 className="text-white text-2xl font-bold mb-1">My Dashboard</h1>
+        <p className="text-gray-400 text-sm mb-8">Track your earnings across all videos</p>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Total Earned', value: fmtUGX(totalEarned), color: 'text-yellow-500' },
+            { label: 'Available to Withdraw', value: fmtUGX(availableForWithdraw), color: 'text-green-400' },
+            { label: 'Total Views', value: totalViews.toLocaleString(), color: 'text-blue-400' },
+            { label: 'Total Videos', value: submissions.length.toString(), color: 'text-purple-400' },
+          ].map(stat => (
+            <div key={stat.label} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-5">
+              <div className={`text-2xl font-bold ${stat.color} mb-1`}>{stat.value}</div>
+              <div className="text-gray-400 text-xs">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Campaign summaries */}
+        <h2 className="text-white font-semibold mb-4">Earnings by Campaign</h2>
+        {campaignSummaries.length === 0 ? (
+          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-12 text-center">
+            <div className="text-4xl mb-3">📹</div>
+            <p className="text-gray-400 text-sm">No submissions yet. Browse campaigns and start earning!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {campaignSummaries.map(camp => (
+              <div key={camp.id} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl overflow-hidden">
+                {/* Campaign summary row */}
+                <button
+                  onClick={() => setExpanded(expanded === camp.id ? null : camp.id)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-yellow-500/5 transition"
+                >
+                  <div>
+                    <h3 className="text-white font-semibold text-sm">{camp.title}</h3>
+                    <div className="flex gap-4 mt-1">
+                      <span className="text-gray-400 text-xs">🎬 {camp.videos} video{camp.videos > 1 ? 's' : ''}</span>
+                      <span className="text-blue-400 text-xs">👁 {camp.totalViews.toLocaleString()} views</span>
+                      <span className="text-green-400 text-xs">💰 {fmtUGX(camp.totalEarnings)}</span>
+                    </div>
+                  </div>
+                  <span className="text-gray-400 text-sm">{expanded === camp.id ? '▲' : '▼'}</span>
+                </button>
+
+                {/* Individual videos */}
+                {expanded === camp.id && (
+                  <div className="border-t border-yellow-900/20 px-5 pb-4">
+                    <p className="text-gray-500 text-xs mb-3 pt-3">Individual videos:</p>
+                    <div className="space-y-2">
+                      {submissions
+                        .filter(s => s.campaigns?.id === camp.id || (s as any).campaign_id === camp.id)
+                        .map((sub, idx) => (
+                          <div key={sub.id} className="bg-black/20 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-gray-400 text-xs font-semibold">Video {idx + 1}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                sub.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                                sub.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                                'bg-yellow-500/20 text-yellow-400'
+                              }`}>{sub.status}</span>
+                            </div>
+                            <a href={sub.video_url} target="_blank" rel="noopener noreferrer"
+                              className="text-yellow-500 text-xs hover:underline truncate block mb-2">
+                              {sub.video_url}
+                            </a>
+                            <div className="flex gap-4 text-xs">
+                              <span className="text-blue-400">👁 {(sub.views || 0).toLocaleString()} views</span>
+                              <span className="text-green-400">💰 {fmtUGX(sub.earnings || 0)}</span>
+                              <span className="text-gray-500">{new Date(sub.submitted_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  )
 }
