@@ -6,7 +6,7 @@ import InfluencerSidebar from '../../components/InfluencerSidebar'
 type Submission = {
   id: string; video_url: string; views: number; earnings: number
   status: string; submitted_at: string
-  campaigns: { id: string; title: string; type: string; pay_per_1k: number }
+  campaigns: { id: string; title: string; type: string; pay_per_1k: number; status: string }
 }
 
 type CampaignSummary = {
@@ -32,10 +32,10 @@ export default function InfluencerDashboard() {
     setProfile(prof)
 
     const { data: subs } = await supabase
-      .from('submissions')
-      .select('*, campaigns(id, title, type, pay_per_1k)')
-      .eq('influencer_id', user.id)
-      .order('submitted_at', { ascending: false })
+  .from('submissions')
+  .select('*, campaigns(id, title, type, pay_per_1k, status)')
+  .eq('influencer_id', user.id)
+  .order('submitted_at', { ascending: false })
 
     if (subs) {
       setSubmissions(subs as any)
