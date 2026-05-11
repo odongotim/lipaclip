@@ -144,23 +144,85 @@ export default function BrandDashboard() {
                   <button onClick={() => handleDelete(camp.id)} className="text-red-400 hover:text-red-300 text-xs flex-shrink-0">🗑️</button>
                 </div>
 
-                {/* Submissions with copy links - only visible to brand owner */}
-                {submissions[camp.id] && submissions[camp.id].length > 0 && (
-                  <div className="mt-4 border-t border-yellow-900/20 pt-3">
-                    <p className="text-gray-500 text-xs mb-2">Submissions ({submissions[camp.id].length})</p>
-                    <div className="space-y-1.5">
-                      {submissions[camp.id].map((sub: any) => (
-                        <div key={sub.id} className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2">
-                          <span className="text-gray-400 text-xs flex-1 truncate">{sub.profiles?.display_name}: {sub.video_url}</span>
-                          <button onClick={() => copyLink(sub.video_url, sub.id)}
-                            className="text-yellow-500 text-xs flex-shrink-0 hover:text-yellow-400">
-                            {copied === sub.id ? '✓ Copied!' : '📋 Copy'}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                {/* Campaign stats and submissions */}
+{submissions[camp.id] && (
+  <div className="mt-4 border-t border-yellow-900/20 pt-3">
+    {/* Summary stats */}
+    <div className="grid grid-cols-3 gap-3 mb-3">
+      {[
+        {
+          label: 'Influencers',
+          value: new Set(submissions[camp.id].map((s: any) => s.influencer_id)).size
+        },
+        {
+          label: 'Videos Posted',
+          value: submissions[camp.id].length
+        },
+        {
+          label: 'Total Views',
+          value: submissions[camp.id].reduce((a: number, s: any) => a + (s.views || 0), 0).toLocaleString()
+        },
+      ].map(stat => (
+        <div key={stat.label} className="bg-black/30 rounded-lg p-2 text-center">
+          <div className="text-yellow-500 font-bold text-sm">{stat.value}</div>
+          <div className="text-gray-500 text-xs">{stat.label}</div>
+        </div>
+      ))}
+    </div>
+
+    {/* Per influencer breakdown */}
+    {submissions[camp.id].length > 0 && (() => {
+      // Group by influencer
+      const byInfluencer: Record<string, any> = {}
+      submissions[camp.id].forEach((sub: any) => {
+        const id = sub.influencer_id
+        if (!byInfluencer[id]) {
+          byInfluencer[id] = {
+            name: sub.profiles?.display_name || 'Unknown',
+            videos: [],
+            totalViews: 0,
+            totalEarnings: 0,
+          }
+        }
+        byInfluencer[id].videos.push(sub)
+        byInfluencer[id].totalViews += sub.views || 0
+        byInfluencer[id].totalEarnings += sub.earnings || 0
+      })
+
+      return (
+        <div className="space-y-2">
+          <p className="text-gray-500 text-xs font-semibold mb-2">Influencer Breakdown:</p>
+          {Object.values(byInfluencer).map((inf: any, idx: number) => (
+            <div key={idx} className="bg-black/20 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white text-xs font-semibold">{inf.name}</span>
+                <div className="flex gap-3 text-xs">
+                  <span className="text-blue-400">👁 {inf.totalViews.toLocaleString()}</span>
+                  <span className="text-green-400">💰 {fmtUGX(inf.totalEarnings)}</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                {inf.videos.map((sub: any, vidIdx: number) => (
+                  <div key={sub.id} className="flex items-center gap-2">
+                    <span className="text-gray-600 text-xs">Video {vidIdx + 1}:</span>
+                    <a href={sub.video_url} target="_blank" rel="noopener noreferrer"
+                      className="text-yellow-500 text-xs hover:underline truncate flex-1">
+                      {sub.video_url}
+                    </a>
+                    <button onClick={() => copyLink(sub.video_url, sub.id)}
+                      className="text-gray-400 hover:text-yellow-500 text-xs flex-shrink-0">
+                      {copied === sub.id ? '✓' : '📋'}
+                    </button>
                   </div>
-                )}
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    })()}
+  </div>
+)}
               </div>
             ))}
           </div>
