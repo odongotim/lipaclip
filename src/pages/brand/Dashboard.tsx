@@ -42,7 +42,11 @@ export default function BrandDashboard() {
 
       // Load submissions for each campaign
       for (const camp of camps) {
-        const { data: subs } = await supabase.from('submissions').select('*, profiles(display_name)').eq('campaign_id', camp.id)
+        const { data: subs } = await supabase
+  .from('submissions')
+  .select('*, profiles(display_name)')
+  .eq('campaign_id', camp.id)
+  .order('submitted_at', { ascending: false })
         if (subs) setSubmissions(prev => ({ ...prev, [camp.id]: subs }))
       }
     }
