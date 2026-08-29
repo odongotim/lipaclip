@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import heroPhoto from '../assets/hero-photo.jpg'
 
 type Campaign = {
   id: string; title: string; type: string; thumbnail_url: string | null
@@ -56,17 +57,11 @@ export default function Landing() {
           </div>
 
           {/*
-            REAL PHOTO GOES HERE.
-            Drop an actual photo of a Ugandan creator filming or reviewing
-            a clip on their phone into src/assets/hero-photo.jpg (portrait,
-            roughly 900x1100px), then swap the placeholder below for:
-            <img src={heroPhoto} alt="A creator filming content on their phone"
-                 className="w-full h-full object-cover rounded-3xl" />
-            Free, properly licensed options if you don't have one on hand yet:
-            search "content creator phone Africa" on Pexels or Unsplash.
+            Drop your photo at src/assets/hero-photo.jpg (portrait, ~900x1125px)
+            and it will render here automatically.
           */}
-          <div className="relative aspect-[4/5] rounded-3xl border border-yellow-500/20 bg-yellow-500/5 flex items-center justify-center overflow-hidden">
-            <span className="text-gray-500 text-sm text-center px-6">Real photo of a creator at work goes here</span>
+          <div className="relative aspect-[4/5] rounded-3xl border border-yellow-500/20 overflow-hidden">
+            <img src={heroPhoto} alt="A creator filming content on their phone" className="w-full h-full object-cover" />
           </div>
         </div>
       </section>
