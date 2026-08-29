@@ -28,7 +28,7 @@ export default function Landing() {
       {/* Navbar */}
       <nav className="flex items-center justify-between px-8 py-5 border-b border-yellow-900/30 sticky top-0 z-30 bg-[#0f0a06]/90 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <img src="/logo.jpg" alt="LipaClip" className="w-10 h-10 rounded-full" />
+          <img src="src/assets/logo.jpg" alt="LipaClip" className="w-10 h-10 rounded-full" />
           <span className="font-display text-yellow-500 text-2xl font-bold tracking-tight">Lipa<span className="text-white">Clip</span></span>
         </div>
         <div className="flex items-center gap-4">
@@ -43,7 +43,7 @@ export default function Landing() {
 
         <div className="relative max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <p className="text-yellow-500 text-sm font-semibold tracking-wide uppercase mb-4">Built in Lira, for creators across Uganda</p>
+            <p className="text-yellow-500 text-sm font-semibold tracking-wide uppercase mb-4"></p>
             <h1 className="font-display text-5xl md:text-6xl font-bold leading-[1.05] mb-6 tracking-tight">
               Clip it. Post it.<br /><span className="text-yellow-500">Get paid in shillings.</span>
             </h1>
