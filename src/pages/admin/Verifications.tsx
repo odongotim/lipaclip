@@ -72,8 +72,8 @@ export default function Verifications() {
   const hasSocials = (inf: Influencer) => inf.tiktok_url || inf.instagram_url || inf.youtube_url || inf.x_url
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center">
-      <div className="text-yellow-500 animate-pulse text-xl">Loading...</div>
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
     </div>
   )
 
@@ -82,44 +82,44 @@ export default function Verifications() {
   const noSocials = influencers.filter(i => !hasSocials(i))
 
   return (
-    <div className="min-h-screen bg-[#0f0a06] flex">
+    <div className="min-h-screen bg-stone-50 flex">
       <AdminSidebar userName={profile?.display_name} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-white text-2xl font-bold mb-1">Verifications</h1>
-        <p className="text-gray-400 text-sm mb-6">Verify influencer social media profiles</p>
+        <h1 className="text-stone-900 text-2xl font-bold mb-1">Verifications</h1>
+        <p className="text-stone-500 text-sm mb-6">Verify influencer social media profiles</p>
 
-        {message && <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
+        {message && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           {[
-            { label: 'Pending', value: pending.length, color: 'text-yellow-400' },
-            { label: 'Verified', value: verified.length, color: 'text-green-400' },
-            { label: 'No Socials', value: noSocials.length, color: 'text-gray-400' },
+            { label: 'Pending', value: pending.length, color: 'text-amber-600' },
+            { label: 'Verified', value: verified.length, color: 'text-green-700' },
+            { label: 'No Socials', value: noSocials.length, color: 'text-stone-500' },
           ].map(s => (
-            <div key={s.label} className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 text-center">
+            <div key={s.label} className="bg-white border border-stone-200 rounded-xl p-4 text-center">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-gray-500 text-xs">{s.label}</div>
+              <div className="text-stone-400 text-xs">{s.label}</div>
             </div>
           ))}
         </div>
 
         <div className="space-y-4">
           {influencers.map(inf => (
-            <div key={inf.id} className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4">
+            <div key={inf.id} className="bg-white border border-stone-200 rounded-xl p-4">
               <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-white font-semibold text-sm">{inf.display_name}</h3>
+                    <h3 className="text-stone-900 font-semibold text-sm">{inf.display_name}</h3>
                     {isVerified(inf)
-                      ? <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">Verified</span>
+                      ? <span className="bg-green-50 text-green-700 text-xs px-2 py-0.5 rounded-full">Verified</span>
                       : hasSocials(inf)
-                        ? <span className="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded-full">Pending</span>
-                        : <span className="bg-gray-500/20 text-gray-400 text-xs px-2 py-0.5 rounded-full">No Socials</span>
+                        ? <span className="bg-amber-100 text-amber-600 text-xs px-2 py-0.5 rounded-full">Pending</span>
+                        : <span className="bg-stone-100 text-stone-500 text-xs px-2 py-0.5 rounded-full">No Socials</span>
                     }
                   </div>
-                  <div className="text-gray-500 text-xs">{inf.email}</div>
-                  {inf.phone && <div className="text-gray-500 text-xs">{inf.phone}</div>}
+                  <div className="text-stone-400 text-xs">{inf.email}</div>
+                  {inf.phone && <div className="text-stone-400 text-xs">{inf.phone}</div>}
                 </div>
 
                 <div className="flex gap-2">
@@ -127,14 +127,14 @@ export default function Verifications() {
                     <button onClick={() => handleVerify(inf.id, isVerified(inf))}
                       className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
                         isVerified(inf)
-                          ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400'
-                          : 'bg-green-500/20 hover:bg-green-500/30 text-green-400'
+                          ? 'bg-red-50 hover:bg-red-100 text-red-600'
+                          : 'bg-green-50 hover:bg-green-100 text-green-700'
                       }`}>
                       {isVerified(inf) ? 'Unverify' : 'Verify'}
                     </button>
                   )}
                   <button onClick={() => editing === inf.id ? setEditing(null) : startEdit(inf)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 transition">
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-100 text-amber-600 transition">
                     {editing === inf.id ? 'Cancel' : 'Edit'}
                   </button>
                 </div>
@@ -143,19 +143,19 @@ export default function Verifications() {
               {/* Social links */}
               {editing !== inf.id && (
                 <div className="space-y-1 text-xs">
-                  {inf.tiktok_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-gray-500 w-14 shrink-0">TikTok</span><a href={inf.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline truncate">{inf.tiktok_url}</a></div>}
-                  {inf.instagram_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-gray-500 w-14 shrink-0">Instagram</span><a href={inf.instagram_url} target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline truncate">{inf.instagram_url}</a></div>}
-                  {inf.youtube_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-gray-500 w-14 shrink-0">YouTube</span><a href={inf.youtube_url} target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline truncate">{inf.youtube_url}</a></div>}
-                  {inf.x_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-gray-500 w-14 shrink-0">X</span><a href={inf.x_url} target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline truncate">{inf.x_url}</a></div>}
-                  {!hasSocials(inf) && <div className="text-gray-600 italic">No social links added yet</div>}
-                  {inf.tiktok_followers > 0 && <div className="text-gray-400 mt-1">{inf.tiktok_followers.toLocaleString()} followers, {inf.tiktok_engagement}% engagement</div>}
+                  {inf.tiktok_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">TikTok</span><a href={inf.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">{inf.tiktok_url}</a></div>}
+                  {inf.instagram_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">Instagram</span><a href={inf.instagram_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">{inf.instagram_url}</a></div>}
+                  {inf.youtube_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">YouTube</span><a href={inf.youtube_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">{inf.youtube_url}</a></div>}
+                  {inf.x_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">X</span><a href={inf.x_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">{inf.x_url}</a></div>}
+                  {!hasSocials(inf) && <div className="text-stone-400 italic">No social links added yet</div>}
+                  {inf.tiktok_followers > 0 && <div className="text-stone-500 mt-1">{inf.tiktok_followers.toLocaleString()} followers, {inf.tiktok_engagement}% engagement</div>}
                 </div>
               )}
 
               {/* Edit form */}
               {editing === inf.id && (
-                <div className="space-y-3 mt-3 border-t border-yellow-900/30 pt-3">
-                  <h4 className="text-white text-xs font-semibold">Edit Social Links & Stats</h4>
+                <div className="space-y-3 mt-3 border-t border-stone-200 pt-3">
+                  <h4 className="text-stone-900 text-xs font-semibold">Edit Social Links & Stats</h4>
                   {[
                     { label: 'TikTok URL', key: 'tiktok_url', type: 'url' },
                     { label: 'Instagram URL', key: 'instagram_url', type: 'url' },
@@ -165,21 +165,21 @@ export default function Verifications() {
                     { label: 'Engagement Rate (%)', key: 'tiktok_engagement', type: 'number' },
                   ].map(field => (
                     <div key={field.key}>
-                      <label className="text-gray-400 text-xs mb-1 block">{field.label}</label>
+                      <label className="text-stone-500 text-xs mb-1 block">{field.label}</label>
                       <input type={field.type} value={editData[field.key] || ''}
                         onChange={e => setEditData({ ...editData, [field.key]: field.type === 'number' ? Number(e.target.value) : e.target.value })}
-                        className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-yellow-500 transition" />
+                        className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500 transition" />
                     </div>
                   ))}
                   <button onClick={() => handleSaveEdit(inf.id)} disabled={saving}
-                    className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-2 rounded-lg transition text-sm">
+                    className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-2 rounded-lg transition text-sm">
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               )}
             </div>
           ))}
-          {influencers.length === 0 && <div className="text-center py-12"><p className="text-gray-400">No influencers yet</p></div>}
+          {influencers.length === 0 && <div className="text-center py-12"><p className="text-stone-500">No influencers yet</p></div>}
         </div>
       </main>
     </div>

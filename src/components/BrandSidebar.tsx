@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import logo from '../assets/logo.jpg'
 
 type Props = { userName?: string; logoUrl?: string }
 
@@ -22,44 +23,44 @@ export default function BrandSidebar({ userName, logoUrl }: Props) {
 
   const navLinks = links.map(item => (
     <Link key={item.to} to={item.to} onClick={() => setOpen(false)}
-      className={`px-4 py-3 rounded-lg text-sm transition block ${location.pathname === item.to ? 'bg-yellow-500/20 text-yellow-400 font-semibold' : 'text-gray-400 hover:text-white hover:bg-yellow-500/10'}`}>
+      className={`px-4 py-3 rounded-lg text-sm transition block ${location.pathname === item.to ? 'bg-amber-100 text-amber-600 font-semibold' : 'text-stone-500 hover:text-stone-900 hover:bg-amber-50'}`}>
       {item.label}
     </Link>
   ))
 
-  const logo = (
+  const brandMark = (
     <Link to="/" className="flex items-center gap-2 mb-8">
-      {logoUrl && <img src={logoUrl} alt="Logo" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />}
-      <span className="text-yellow-500 text-xl font-bold">Lipa<span className="text-white">Clip</span></span>
+      <img src={logoUrl || logo} alt="LipaClip" className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-stone-200" />
+      <span className="text-amber-600 text-xl font-bold">Lipa<span className="text-stone-900">Clip</span></span>
     </Link>
   )
 
   const footer = (
-    <div className="mt-auto pt-6 border-t border-yellow-900/30">
-      <div className="text-gray-500 text-xs mb-3 truncate">{userName}</div>
-      <button onClick={handleLogout} className="text-red-400 hover:text-red-300 text-sm transition">Logout</button>
+    <div className="mt-auto pt-6 border-t border-stone-200">
+      <div className="text-stone-400 text-xs mb-3 truncate">{userName}</div>
+      <button onClick={handleLogout} className="text-red-600 hover:text-red-700 text-sm transition">Logout</button>
     </div>
   )
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="lg:hidden fixed top-4 left-4 z-50 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 p-2 rounded-lg">
+      <button onClick={() => setOpen(true)} className="lg:hidden fixed top-4 left-4 z-50 bg-amber-50 border border-stone-300 text-amber-600 p-2 rounded-lg">
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
       </button>
 
-      {open && <div className="lg:hidden fixed inset-0 bg-black/70 z-40" onClick={() => setOpen(false)} />}
+      {open && <div className="lg:hidden fixed inset-0 bg-stone-900/50 z-40" onClick={() => setOpen(false)} />}
 
-      <div className={`lg:hidden fixed top-0 left-0 h-full w-64 bg-[#0f0a06] border-r border-yellow-900/30 p-6 z-50 flex flex-col transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-        <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+      <div className={`lg:hidden fixed top-0 left-0 h-full w-64 bg-stone-50 border-r border-stone-200 p-6 z-50 flex flex-col transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+        <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-stone-500 hover:text-stone-900">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
-        {logo}
+        {brandMark}
         <div className="flex flex-col gap-1 flex-1">{navLinks}</div>
         {footer}
       </div>
 
-      <aside className="hidden lg:flex flex-col w-64 border-r border-yellow-900/30 p-6 fixed h-full bg-[#0f0a06]">
-        {logo}
+      <aside className="hidden lg:flex flex-col w-64 border-r border-stone-200 p-6 fixed h-full bg-stone-50">
+        {brandMark}
         <div className="flex flex-col gap-1 flex-1">{navLinks}</div>
         {footer}
       </aside>

@@ -100,45 +100,45 @@ export default function Withdraw() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center">
-      <div className="text-yellow-500 animate-pulse text-xl">Loading...</div>
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#0f0a06] flex">
+    <div className="min-h-screen bg-stone-50 flex">
       <InfluencerSidebar userName={profile?.display_name} />
 
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-white text-2xl font-bold mb-1">Withdraw</h1>
-        <p className="text-gray-400 text-sm mb-8">Withdraw your earnings to Mobile Money</p>
+        <h1 className="text-stone-900 text-2xl font-bold mb-1">Withdraw</h1>
+        <p className="text-stone-500 text-sm mb-8">Withdraw your earnings to Mobile Money</p>
 
         {message && (
-          <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg mb-6">
+          <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">
             {message}
           </div>
         )}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
 
         <div className="max-w-xl space-y-6">
           {/* Balance */}
-          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6">
-            <div className="text-gray-400 text-sm mb-1">Available Balance</div>
-            <div className="text-yellow-500 text-4xl font-bold">{fmtUGX(available)}</div>
-            <div className="text-gray-500 text-xs mt-1">From completed & approved campaigns only</div>
+          <div className="bg-white border border-stone-200 rounded-2xl p-6">
+            <div className="text-stone-500 text-sm mb-1">Available Balance</div>
+            <div className="text-amber-600 text-4xl font-bold">{fmtUGX(available)}</div>
+            <div className="text-stone-400 text-xs mt-1">From completed & approved campaigns only</div>
           </div>
 
           {/* Withdraw form */}
-          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 space-y-4">
-            <h2 className="text-white font-semibold">Request Withdrawal</h2>
+          <div className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
+            <h2 className="text-stone-900 font-semibold">Request Withdrawal</h2>
 
             <div>
-              <label className="text-gray-400 text-sm mb-1 block">
-                Amount (UGX) <span className="text-gray-600">Min: {fmtUGX(minWithdrawal)}</span>
+              <label className="text-stone-500 text-sm mb-1 block">
+                Amount (UGX) <span className="text-stone-400">Min: {fmtUGX(minWithdrawal)}</span>
               </label>
               <input
                 type="number"
@@ -146,34 +146,34 @@ export default function Withdraw() {
                 onChange={e => setAmount(Number(e.target.value))}
                 placeholder="e.g. 50000"
                 max={available}
-                className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
               />
             </div>
 
             <div>
-              <label className="text-gray-400 text-sm mb-1 block">Mobile Money Number</label>
+              <label className="text-stone-500 text-sm mb-1 block">Mobile Money Number</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 placeholder="e.g. 0771234567"
-                className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
               />
             </div>
 
             {amount > 0 && (
-              <div className="bg-black/40 border border-yellow-500/20 rounded-xl p-4 space-y-2">
+              <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Amount</span>
-                  <span className="text-white">{fmtUGX(amount)}</span>
+                  <span className="text-stone-500">Amount</span>
+                  <span className="text-stone-900">{fmtUGX(amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Service Fee (15%)</span>
-                  <span className="text-red-400">-{fmtUGX(fee)}</span>
+                  <span className="text-stone-500">Service Fee (15%)</span>
+                  <span className="text-red-600">-{fmtUGX(fee)}</span>
                 </div>
-                <div className="border-t border-yellow-900/30 pt-2 flex justify-between text-sm font-bold">
-                  <span className="text-white">You Receive</span>
-                  <span className="text-green-400">{fmtUGX(netAmount)}</span>
+                <div className="border-t border-stone-200 pt-2 flex justify-between text-sm font-bold">
+                  <span className="text-stone-900">You Receive</span>
+                  <span className="text-green-700">{fmtUGX(netAmount)}</span>
                 </div>
               </div>
             )}
@@ -181,7 +181,7 @@ export default function Withdraw() {
             <button
               onClick={handleWithdraw}
               disabled={submitting || amount < minWithdrawal || amount > available}
-              className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition text-sm"
+              className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm"
             >
               {submitting ? 'Submitting...' : 'Request Withdrawal'}
             </button>
@@ -189,23 +189,23 @@ export default function Withdraw() {
 
           {/* Withdrawal history */}
           <div>
-            <h2 className="text-white font-semibold mb-3">Withdrawal History</h2>
+            <h2 className="text-stone-900 font-semibold mb-3">Withdrawal History</h2>
             {withdrawals.length === 0 ? (
-              <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-8 text-center">
-                <p className="text-gray-400 text-sm">No withdrawals yet</p>
+              <div className="bg-white border border-stone-200 rounded-2xl p-8 text-center">
+                <p className="text-stone-500 text-sm">No withdrawals yet</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {withdrawals.map(w => (
-                  <div key={w.id} className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 flex items-center justify-between">
+                  <div key={w.id} className="bg-white border border-stone-200 rounded-xl p-4 flex items-center justify-between">
                     <div>
-                      <div className="text-white font-semibold text-sm">{fmtUGX(w.net_amount)}</div>
-                      <div className="text-gray-500 text-xs">{w.phone} • {new Date(w.requested_at).toLocaleDateString()}</div>
+                      <div className="text-stone-900 font-semibold text-sm">{fmtUGX(w.net_amount)}</div>
+                      <div className="text-stone-400 text-xs">{w.phone} • {new Date(w.requested_at).toLocaleDateString()}</div>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full ${
-                      w.status === 'approved' ? 'bg-green-500/20 text-green-400' :
-                      w.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
-                      'bg-yellow-500/20 text-yellow-400'
+                      w.status === 'approved' ? 'bg-green-50 text-green-700' :
+                      w.status === 'rejected' ? 'bg-red-50 text-red-600' :
+                      'bg-amber-100 text-amber-600'
                     }`}>{w.status}</span>
                   </div>
                 ))}

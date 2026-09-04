@@ -55,37 +55,37 @@ export default function Users() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center">
-      <div className="text-yellow-500 animate-pulse text-xl">Loading...</div>
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#0f0a06] flex">
+    <div className="min-h-screen bg-stone-50 flex">
       <AdminSidebar userName={profile?.display_name} />
 
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-white text-2xl font-bold mb-1">Manage Users</h1>
-        <p className="text-gray-400 text-sm mb-8">View all users and manage their accounts</p>
+        <h1 className="text-stone-900 text-2xl font-bold mb-1">Manage Users</h1>
+        <p className="text-stone-500 text-sm mb-8">View all users and manage their accounts</p>
 
         <div className="overflow-x-auto">
           <div className="space-y-3">
             {users.map(user => (
-              <div key={user.id} className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4">
+              <div key={user.id} className="bg-white border border-stone-200 rounded-xl p-4">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-white font-semibold text-sm">{user.display_name}</h3>
+                      <h3 className="text-stone-900 font-semibold text-sm">{user.display_name}</h3>
                       <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
-                        user.role === 'brand' ? 'bg-yellow-500/20 text-yellow-400' :
-                        user.role === 'influencer' ? 'bg-blue-500/20 text-blue-400' :
-                        'bg-purple-500/20 text-purple-400'
+                        user.role === 'brand' ? 'bg-amber-100 text-amber-600' :
+                        user.role === 'influencer' ? 'bg-blue-50 text-blue-700' :
+                        'bg-purple-50 text-purple-700'
                       }`}>{user.role}</span>
-                      {user.is_suspended && <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">Suspended</span>}
-                      {user.tiktok_verified && user.role === 'influencer' && <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">TikTok Verified</span>}
+                      {user.is_suspended && <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-600">Suspended</span>}
+                      {user.tiktok_verified && user.role === 'influencer' && <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700">TikTok Verified</span>}
                     </div>
-                    <div className="text-gray-500 text-xs">{user.email}</div>
-                    <div className="text-gray-600 text-xs mt-1">Joined {new Date(user.created_at).toLocaleDateString()}</div>
+                    <div className="text-stone-400 text-xs">{user.email}</div>
+                    <div className="text-stone-400 text-xs mt-1">Joined {new Date(user.created_at).toLocaleDateString()}</div>
                   </div>
 
                   <div className="flex gap-2 flex-wrap justify-end">
@@ -94,8 +94,8 @@ export default function Users() {
                       disabled={actionUser === user.id}
                       className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-50 ${
                         user.is_suspended
-                          ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400'
-                          : 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400'
+                          ? 'bg-green-50 hover:bg-green-100 text-green-700'
+                          : 'bg-amber-100 hover:bg-amber-100 text-amber-600'
                       }`}
                     >
                       {user.is_suspended ? 'Unsuspend' : 'Suspend'}
@@ -103,7 +103,7 @@ export default function Users() {
                     <button
                       onClick={() => handleDelete(user.id)}
                       disabled={actionUser === user.id}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition disabled:opacity-50"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition disabled:opacity-50"
                     >
                       Delete
                     </button>
@@ -116,7 +116,7 @@ export default function Users() {
 
         {users.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-400">No users found</p>
+            <p className="text-stone-500">No users found</p>
           </div>
         )}
       </main>

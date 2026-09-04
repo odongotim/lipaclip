@@ -71,24 +71,24 @@ export default function Settings() {
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
 
   if (loading || !settings) return (
-    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center">
-      <div className="text-yellow-500 animate-pulse text-xl">Loading...</div>
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#0f0a06] flex">
+    <div className="min-h-screen bg-stone-50 flex">
       <AdminSidebar userName={profile?.display_name} />
 
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-white text-2xl font-bold mb-1">Settings</h1>
-        <p className="text-gray-400 text-sm mb-8">Configure platform fees and campaign limits</p>
+        <h1 className="text-stone-900 text-2xl font-bold mb-1">Settings</h1>
+        <p className="text-stone-500 text-sm mb-8">Configure platform fees and campaign limits</p>
 
         {message && (
           <div className={`mb-6 text-sm px-4 py-3 rounded-lg border ${
             message.includes('Error')
-              ? 'bg-red-500/10 border-red-500/30 text-red-400'
-              : 'bg-green-500/10 border-green-500/30 text-green-400'
+              ? 'bg-red-50 border-red-200 text-red-600'
+              : 'bg-green-50 border-green-200 text-green-700'
           }`}>
             {message}
           </div>
@@ -97,40 +97,40 @@ export default function Settings() {
         <div className="max-w-2xl space-y-6">
 
           {/* Global Fees */}
-          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6">
-            <h2 className="text-white font-semibold mb-4">Global Fees</h2>
+          <div className="bg-white border border-stone-200 rounded-2xl p-6">
+            <h2 className="text-stone-900 font-semibold mb-4">Global Fees</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-gray-400 text-sm mb-1 block">Deposit Fee (%)</label>
+                <label className="text-stone-500 text-sm mb-1 block">Deposit Fee (%)</label>
                 <input
                   type="number"
                   value={settings.deposit_fee_pct}
                   onChange={e => handleChange('deposit_fee_pct', Number(e.target.value))}
                   step={0.1}
-                  className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
+                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
                 />
-                <p className="text-gray-500 text-xs mt-1">Charged when brands deposit money</p>
+                <p className="text-stone-400 text-xs mt-1">Charged when brands deposit money</p>
               </div>
 
               <div>
-                <label className="text-gray-400 text-sm mb-1 block">Service Fee (%) - Withdrawal</label>
+                <label className="text-stone-500 text-sm mb-1 block">Service Fee (%) - Withdrawal</label>
                 <input
                   type="number"
                   value={settings.service_fee_pct}
                   onChange={e => handleChange('service_fee_pct', Number(e.target.value))}
                   step={0.1}
-                  className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
+                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
                 />
-                <p className="text-gray-500 text-xs mt-1">Charged when influencers withdraw earnings</p>
+                <p className="text-stone-400 text-xs mt-1">Charged when influencers withdraw earnings</p>
               </div>
 
               <div>
-                <label className="text-gray-400 text-sm mb-1 block">Minimum Withdrawal {fmtUGX(settings.min_withdrawal)}</label>
+                <label className="text-stone-500 text-sm mb-1 block">Minimum Withdrawal {fmtUGX(settings.min_withdrawal)}</label>
                 <input
                   type="number"
                   value={settings.min_withdrawal}
                   onChange={e => handleChange('min_withdrawal', Number(e.target.value))}
-                  className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
+                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
                 />
               </div>
             </div>
@@ -142,43 +142,43 @@ export default function Settings() {
             { type: 'Clipping', prefix: 'clip' },
             { type: 'UGC', prefix: 'ugc' },
           ].map(camp => (
-            <div key={camp.prefix} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6">
-              <h2 className="text-white font-semibold mb-4">{camp.type} Campaign Settings</h2>
+            <div key={camp.prefix} className="bg-white border border-stone-200 rounded-2xl p-6">
+              <h2 className="text-stone-900 font-semibold mb-4">{camp.type} Campaign Settings</h2>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-gray-400 text-sm mb-1 block">Min Budget</label>
+                  <label className="text-stone-500 text-sm mb-1 block">Min Budget</label>
                   <input
                     type="number"
                     value={settings[`${camp.prefix}_min_budget` as keyof Settings]}
                     onChange={e => handleChange(`${camp.prefix}_min_budget` as keyof Settings, Number(e.target.value))}
-                    className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
+                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm mb-1 block">Max Budget</label>
+                  <label className="text-stone-500 text-sm mb-1 block">Max Budget</label>
                   <input
                     type="number"
                     value={settings[`${camp.prefix}_max_budget` as keyof Settings]}
                     onChange={e => handleChange(`${camp.prefix}_max_budget` as keyof Settings, Number(e.target.value))}
-                    className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
+                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm mb-1 block">Min Pay per 1k Views</label>
+                  <label className="text-stone-500 text-sm mb-1 block">Min Pay per 1k Views</label>
                   <input
                     type="number"
                     value={settings[`${camp.prefix}_min_perk` as keyof Settings]}
                     onChange={e => handleChange(`${camp.prefix}_min_perk` as keyof Settings, Number(e.target.value))}
-                    className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
+                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm mb-1 block">Max Pay per 1k Views</label>
+                  <label className="text-stone-500 text-sm mb-1 block">Max Pay per 1k Views</label>
                   <input
                     type="number"
                     value={settings[`${camp.prefix}_max_perk` as keyof Settings]}
                     onChange={e => handleChange(`${camp.prefix}_max_perk` as keyof Settings, Number(e.target.value))}
-                    className="w-full bg-black/40 border border-yellow-500/20 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition"
+                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
               </div>
@@ -188,7 +188,7 @@ export default function Settings() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition text-sm"
+            className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm"
           >
             {saving ? 'Saving...' : 'Save Settings'}
           </button>

@@ -53,47 +53,47 @@ export default function AdminDashboard() {
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center">
-      <div className="text-yellow-500 animate-pulse text-xl">Loading...</div>
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#0f0a06] flex">
+    <div className="min-h-screen bg-stone-50 flex">
       <AdminSidebar userName={profile?.display_name} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-white text-2xl font-bold mb-1">Admin Dashboard</h1>
-        <p className="text-gray-400 text-sm mb-8">Platform overview and management</p>
+        <h1 className="text-stone-900 text-2xl font-bold mb-1">Admin Dashboard</h1>
+        <p className="text-stone-500 text-sm mb-8">Platform overview and management</p>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Deposited', value: fmtUGX(stats.totalDeposited), color: 'text-yellow-500' },
-            { label: 'Total Earned', value: fmtUGX(stats.totalEarned), color: 'text-green-400' },
-            { label: 'Profit', value: fmtUGX(stats.totalProfit), color: 'text-blue-400' },
-            { label: 'Total Users', value: stats.totalUsers.toString(), color: 'text-purple-400' },
+            { label: 'Total Deposited', value: fmtUGX(stats.totalDeposited), color: 'text-amber-600' },
+            { label: 'Total Earned', value: fmtUGX(stats.totalEarned), color: 'text-green-700' },
+            { label: 'Profit', value: fmtUGX(stats.totalProfit), color: 'text-blue-700' },
+            { label: 'Total Users', value: stats.totalUsers.toString(), color: 'text-purple-700' },
           ].map(stat => (
-            <div key={stat.label} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-5">
+            <div key={stat.label} className="bg-white border border-stone-200 rounded-2xl p-5">
               <div className={`text-2xl font-bold ${stat.color} mb-1`}>{stat.value}</div>
-              <div className="text-gray-400 text-xs">{stat.label}</div>
+              <div className="text-stone-500 text-xs">{stat.label}</div>
             </div>
           ))}
         </div>
 
         <div className="grid md:grid-cols-3 gap-4 mb-8">
           {[
-            { label: 'Brands', value: stats.brands, color: 'text-yellow-500' },
-            { label: 'Influencers', value: stats.influencers, color: 'text-green-400' },
-            { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, color: 'text-red-400' },
+            { label: 'Brands', value: stats.brands, color: 'text-amber-600' },
+            { label: 'Influencers', value: stats.influencers, color: 'text-green-700' },
+            { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, color: 'text-red-600' },
           ].map(stat => (
-            <div key={stat.label} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 text-center">
+            <div key={stat.label} className="bg-white border border-stone-200 rounded-2xl p-6 text-center">
               <div className={`text-4xl font-bold ${stat.color} mb-2`}>{stat.value}</div>
-              <div className="text-gray-400 text-sm">{stat.label}</div>
+              <div className="text-stone-500 text-sm">{stat.label}</div>
             </div>
           ))}
         </div>
 
-        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6">
-          <h2 className="text-white font-semibold mb-4">Quick Actions</h2>
+        <div className="bg-white border border-stone-200 rounded-2xl p-6">
+          <h2 className="text-stone-900 font-semibold mb-4">Quick Actions</h2>
           <div className="grid md:grid-cols-2 gap-3">
             {[
               { href: '/admin/users', title: 'Manage Users', desc: 'View, suspend, or delete users' },
@@ -101,9 +101,9 @@ export default function AdminDashboard() {
               { href: '/admin/verifications', title: 'Verify Influencers', desc: 'Approve influencer socials' },
               { href: '/admin/settings', title: 'Settings', desc: 'Configure platform settings' },
             ].map(item => (
-              <a key={item.href} href={item.href} className="block bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 transition">
-                <div className="text-yellow-400 font-semibold text-sm">{item.title}</div>
-                <div className="text-gray-500 text-xs mt-1">{item.desc}</div>
+              <a key={item.href} href={item.href} className="block bg-amber-50 hover:bg-amber-100 border border-stone-300 rounded-lg p-4 transition">
+                <div className="text-amber-600 font-semibold text-sm">{item.title}</div>
+                <div className="text-stone-400 text-xs mt-1">{item.desc}</div>
               </a>
             ))}
           </div>

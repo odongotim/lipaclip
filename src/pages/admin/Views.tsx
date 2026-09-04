@@ -77,31 +77,31 @@ export default function Views() {
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0a06] flex items-center justify-center">
-      <div className="text-yellow-500 animate-pulse text-xl">Loading...</div>
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#0f0a06] flex">
+    <div className="min-h-screen bg-stone-50 flex">
       <AdminSidebar userName={profile?.display_name} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-white text-2xl font-bold mb-1">Manage Views</h1>
-        <p className="text-gray-400 text-sm mb-6">Update view counts and approve submissions</p>
+        <h1 className="text-stone-900 text-2xl font-bold mb-1">Manage Views</h1>
+        <p className="text-stone-500 text-sm mb-6">Update view counts and approve submissions</p>
 
-        {message && <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
+        {message && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
 
         <div className="space-y-4">
           {submissions.map(sub => (
-            <div key={sub.id} className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4">
+            <div key={sub.id} className="bg-white border border-stone-200 rounded-xl p-4">
               <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
                 <div>
-                  <h3 className="text-white font-semibold text-sm">{sub.profiles?.display_name}</h3>
-                  <div className="text-gray-500 text-xs mb-1">{sub.campaigns?.title}</div>
+                  <h3 className="text-stone-900 font-semibold text-sm">{sub.profiles?.display_name}</h3>
+                  <div className="text-stone-400 text-xs mb-1">{sub.campaigns?.title}</div>
                   {/* Video link - copyable */}
                   <div className="flex items-center gap-2">
-                    <a href={sub.video_url} target="_blank" rel="noopener noreferrer" className="text-yellow-500 text-xs hover:underline truncate max-w-xs">{sub.video_url}</a>
-                    <button onClick={() => copyLink(sub.video_url, sub.id)} className="text-gray-400 hover:text-yellow-500 text-xs flex-shrink-0">
+                    <a href={sub.video_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 text-xs hover:underline truncate max-w-xs">{sub.video_url}</a>
+                    <button onClick={() => copyLink(sub.video_url, sub.id)} className="text-stone-500 hover:text-amber-600 text-xs flex-shrink-0">
                       {copied === sub.id
                         ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                         : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
@@ -109,42 +109,42 @@ export default function Views() {
                     </button>
                   </div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${sub.status === 'approved' ? 'bg-green-500/20 text-green-400' : sub.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{sub.status}</span>
+                <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${sub.status === 'approved' ? 'bg-green-50 text-green-700' : sub.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-100 text-amber-600'}`}>{sub.status}</span>
               </div>
 
               <div className="flex gap-6 mb-3">
-                <div><div className="text-white font-bold text-sm">{(sub.views || 0).toLocaleString()}</div><div className="text-gray-500 text-xs">views</div></div>
-                <div><div className="text-green-400 font-bold text-sm">{fmtUGX(sub.earnings || 0)}</div><div className="text-gray-500 text-xs">earned</div></div>
-                <div><div className="text-gray-300 font-bold text-sm">{fmtUGX(sub.campaigns?.pay_per_1k || 0)}</div><div className="text-gray-500 text-xs">per 1k</div></div>
-                <div><div className="text-blue-400 font-bold text-sm">{fmtUGX(sub.campaigns?.budget || 0)}</div><div className="text-gray-500 text-xs">budget</div></div>
+                <div><div className="text-stone-900 font-bold text-sm">{(sub.views || 0).toLocaleString()}</div><div className="text-stone-400 text-xs">views</div></div>
+                <div><div className="text-green-700 font-bold text-sm">{fmtUGX(sub.earnings || 0)}</div><div className="text-stone-400 text-xs">earned</div></div>
+                <div><div className="text-stone-600 font-bold text-sm">{fmtUGX(sub.campaigns?.pay_per_1k || 0)}</div><div className="text-stone-400 text-xs">per 1k</div></div>
+                <div><div className="text-blue-700 font-bold text-sm">{fmtUGX(sub.campaigns?.budget || 0)}</div><div className="text-stone-400 text-xs">budget</div></div>
               </div>
 
               {editing === sub.id ? (
                 <div className="flex gap-2 items-center mt-2">
                   <input type="number" value={newViews} onChange={e => setNewViews(Number(e.target.value))}
-                    className="flex-1 bg-black/40 border border-yellow-500/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500"
+                    className="flex-1 bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
                     placeholder="Enter view count" />
                   <button onClick={() => handleUpdateViews(sub)} disabled={saving}
-                    className="bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs font-semibold px-3 py-2 rounded-lg transition disabled:opacity-50">
+                    className="bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold px-3 py-2 rounded-lg transition disabled:opacity-50">
                     {saving ? '...' : 'Save'}
                   </button>
-                  <button onClick={() => setEditing(null)} className="bg-red-500/20 text-red-400 text-xs font-semibold px-3 py-2 rounded-lg">Cancel</button>
+                  <button onClick={() => setEditing(null)} className="bg-red-50 text-red-600 text-xs font-semibold px-3 py-2 rounded-lg">Cancel</button>
                 </div>
               ) : (
                 <div className="flex gap-2 flex-wrap mt-2">
                   <button onClick={() => { setEditing(sub.id); setNewViews(sub.views || 0) }}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 transition">
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-100 text-amber-600 transition">
                     Update Views
                   </button>
                   {sub.status === 'pending' && <>
-                    <button onClick={() => handleApprove(sub.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition">Approve</button>
-                    <button onClick={() => handleReject(sub.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition">Reject</button>
+                    <button onClick={() => handleApprove(sub.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 transition">Approve</button>
+                    <button onClick={() => handleReject(sub.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition">Reject</button>
                   </>}
                 </div>
               )}
             </div>
           ))}
-          {submissions.length === 0 && <div className="text-center py-12"><p className="text-gray-400">No submissions yet</p></div>}
+          {submissions.length === 0 && <div className="text-center py-12"><p className="text-stone-500">No submissions yet</p></div>}
         </div>
       </main>
     </div>
