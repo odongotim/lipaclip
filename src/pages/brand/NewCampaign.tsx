@@ -261,9 +261,10 @@ export default function NewCampaign() {
             <div className="flex gap-3">
               <button
                 onClick={() => { setStep('form'); setError('') }}
-                className="flex-1 border border-stone-300 text-stone-500 font-semibold py-3 rounded-xl text-sm hover:border-amber-400 transition"
+                className="flex-1 border border-stone-300 text-stone-500 font-semibold py-3 rounded-xl text-sm hover:border-amber-400 transition inline-flex items-center justify-center gap-1.5"
               >
-                ← Back
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                Back
               </button>
               <button
                 onClick={handleSubmitPayment}
@@ -477,9 +478,14 @@ export default function NewCampaign() {
             <button
               onClick={handleProceedToPayment}
               disabled={loading || uploading}
-              className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition text-sm"
+              className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition text-sm inline-flex items-center justify-center gap-1.5"
             >
-              {uploading ? 'Uploading file...' : loading ? 'Processing...' : 'Proceed to Payment →'}
+              {uploading ? 'Uploading file...' : loading ? 'Processing...' : (
+                <>
+                  Proceed to Payment
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </>
+              )}
             </button>
           </div>
         </div>

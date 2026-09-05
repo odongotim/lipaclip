@@ -6,11 +6,12 @@ import InfluencerSidebar from '../../components/InfluencerSidebar'
 type Submission = {
   id: string; video_url: string; views: number; earnings: number
   status: string; submitted_at: string
-  campaigns: { id: string; title: string; type: string; pay_per_1k: number; status: string }
+  campaigns: { id: string; title: string; type: string; pay_per_1k: number; status: string; budget: number; spent: number }
 }
 
 type CampaignSummary = {
   id: string; title: string; totalViews: number; totalEarnings: number; videos: number
+  budget: number; spent: number
 }
 
 export default function InfluencerDashboard() {
@@ -38,7 +39,7 @@ export default function InfluencerDashboard() {
 
     const { data: subs } = await supabase
   .from('submissions')
-  .select('*, campaigns(id, title, type, pay_per_1k, status)')
+  .select('*, campaigns(id, title, type, pay_per_1k, status, budget, spent)')
   .eq('influencer_id', user.id)
   .order('submitted_at', { ascending: false })
 
@@ -51,7 +52,7 @@ export default function InfluencerDashboard() {
         const campId = s.campaigns?.id || s.campaign_id
         const campTitle = s.campaigns?.title || 'Unknown'
         if (!grouped[campId]) {
-          grouped[campId] = { id: campId, title: campTitle, totalViews: 0, totalEarnings: 0, videos: 0 }
+          grouped[campId] = { id: campId, title: campTitle, totalViews: 0, totalEarnings: 0, videos: 0, budget: s.campaigns?.budget || 0, spent: s.campaigns?.spent || 0 }
         }
         grouped[campId].totalViews += s.views || 0
         grouped[campId].totalEarnings += s.earnings || 0
@@ -116,13 +117,16 @@ export default function InfluencerDashboard() {
                 >
                   <div>
                     <h3 className="text-stone-900 font-semibold text-sm">{camp.title}</h3>
-                    <div className="flex gap-4 mt-1">
+                    <div className="flex gap-4 mt-1 items-center flex-wrap">
                       <span className="text-stone-500 text-xs">{camp.videos} video{camp.videos > 1 ? 's' : ''}</span>
                       <span className="text-blue-700 text-xs">{camp.totalViews.toLocaleString()} views</span>
                       <span className="text-green-700 text-xs">{fmtUGX(camp.totalEarnings)}</span>
+                      {camp.budget > 0 && camp.spent >= camp.budget && (
+                        <span className="bg-amber-100 text-amber-600 text-[10px] font-semibold px-2 py-0.5 rounded-full">Budget fully earned — extra views won't add more earnings</span>
+                      )}
                     </div>
                   </div>
-                  <span className="text-stone-500 text-sm">{expanded === camp.id ? '▲' : '▼'}</span>
+                  <svg className={`w-4 h-4 text-stone-500 transition-transform ${expanded === camp.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                 </button>
 
                 {/* Individual videos */}
