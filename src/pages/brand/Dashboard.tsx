@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase, getCurrentUser, subscribeToTable } from '../../lib/supabase'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandSidebar from '../../components/BrandSidebar'
 
@@ -21,16 +21,21 @@ export default function BrandDashboard() {
   const [submissions, setSubmissions] = useState<Record<string, any[]>>({})
   const [copied, setCopied] = useState<string | null>(null)
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => {
+    loadData()
+    const unsub1 = subscribeToTable('submissions', loadData)
+    const unsub2 = subscribeToTable('campaigns', loadData)
+    return () => { unsub1(); unsub2() }
+  }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (prof?.role !== 'brand') { navigate('/'); return }
     setProfile(prof)
 
-    const { data: camps } = await supabase.from('campaigns').select('*').eq('brand_id', user.id).order('created_at', { ascending: false })
+    const { data: camps } = await supabase.from('campaigns').select('*').eq('brand_id', user.id).neq('status', 'failed').order('created_at', { ascending: false })
     if (camps) {
       setCampaigns(camps)
       setStats({
@@ -125,7 +130,7 @@ export default function BrandDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="text-stone-900 font-semibold text-sm">{camp.title}</h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${camp.status === 'live' ? 'bg-green-50 text-green-700' : camp.status === 'completed' ? 'bg-blue-50 text-blue-700' : 'bg-amber-100 text-amber-600'}`}>{camp.status}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${camp.status === 'live' ? 'bg-green-50 text-green-700' : camp.status === 'completed' ? 'bg-blue-50 text-blue-700' : 'bg-amber-100 text-amber-600'}`}>{camp.status === 'pending' ? 'Awaiting Payment' : camp.status}</span>
                     </div>
 
                     {/* Platform icons */}

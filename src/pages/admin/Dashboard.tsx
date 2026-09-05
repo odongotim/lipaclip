@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase, getCurrentUser, subscribeToTable } from '../../lib/supabase'
 import AdminSidebar from '../../components/AdminSidebar'
 
 export default function AdminDashboard() {
@@ -9,10 +9,17 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ totalDeposited: 0, totalEarned: 0, totalProfit: 0, totalUsers: 0, brands: 0, influencers: 0, pendingWithdrawals: 0 })
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => {
+    loadData()
+    const unsub1 = subscribeToTable('submissions', loadData)
+    const unsub2 = subscribeToTable('campaigns', loadData)
+    const unsub3 = subscribeToTable('deposits', loadData)
+    const unsub4 = subscribeToTable('withdrawals', loadData)
+    return () => { unsub1(); unsub2(); unsub3(); unsub4() }
+  }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
 
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
@@ -21,10 +28,10 @@ export default function AdminDashboard() {
 
     try {
       const [depositsRes, subsRes, profilesRes, withdrawalsRes] = await Promise.all([
-        supabase.from('deposits').select('total_charged, status'),
-        supabase.from('submissions').select('earnings'),
+        supabase.from('deposits').select('amount, total_charged, status'),
+        supabase.from('submissions').select('earnings, status'),
         supabase.from('profiles').select('id, role'),
-        supabase.from('withdrawals').select('id').eq('status', 'pending'),
+        supabase.from('withdrawals').select('amount, fee, status'),
       ])
 
       const deposits = depositsRes.data || []
@@ -32,17 +39,33 @@ export default function AdminDashboard() {
       const profiles = profilesRes.data || []
       const withdrawals = withdrawalsRes.data || []
 
-      const totalDep = deposits.filter((d: any) => d.status === 'completed').reduce((a: number, d: any) => a + (d.total_charged || 0), 0)
-      const totalEarn = subs.reduce((a: number, s: any) => a + (s.earnings || 0), 0)
+      // Money brands have deposited into campaigns (excluding the platform's deposit fee)
+      const completedDeposits = deposits.filter((d: any) => d.status === 'completed')
+      const totalDepositedGross = completedDeposits.reduce((a: number, d: any) => a + (d.amount || 0), 0)
+      const depositFees = completedDeposits.reduce((a: number, d: any) => a + ((d.total_charged || 0) - (d.amount || 0)), 0)
+
+      // Money that has actually become influencer earnings (approved submissions only)
+      const approvedEarnings = subs.filter((s: any) => s.status === 'approved').reduce((a: number, s: any) => a + (s.earnings || 0), 0)
+
+      // Earnings already claimed (requested, processing, or paid out) — mirrors the
+      // "available balance" calculation on the influencer Withdraw page
+      const claimedEarnings = withdrawals
+        .filter((w: any) => w.status === 'pending' || w.status === 'processing' || w.status === 'approved')
+        .reduce((a: number, w: any) => a + (w.amount || 0), 0)
+
+      const withdrawalFees = withdrawals.filter((w: any) => w.status === 'approved').reduce((a: number, w: any) => a + (w.fee || 0), 0)
 
       setStats({
-        totalDeposited: totalDep,
-        totalEarned: totalEarn,
-        totalProfit: totalDep - totalEarn,
+        // Deposited by brands, still sitting in escrow (not yet turned into influencer earnings)
+        totalDeposited: Math.max(0, totalDepositedGross - approvedEarnings),
+        // Earned by influencers but still sitting in their account (not yet withdrawn)
+        totalEarned: Math.max(0, approvedEarnings - claimedEarnings),
+        // Platform revenue: deposit fees + withdrawal fees actually collected
+        totalProfit: depositFees + withdrawalFees,
         totalUsers: profiles.filter((p: any) => p.role !== 'admin').length,
         brands: profiles.filter((p: any) => p.role === 'brand').length,
         influencers: profiles.filter((p: any) => p.role === 'influencer').length,
-        pendingWithdrawals: withdrawals.length,
+        pendingWithdrawals: withdrawals.filter((w: any) => w.status === 'pending').length,
       })
     } catch (err) {
       console.error('Error loading stats:', err)

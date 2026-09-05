@@ -81,7 +81,22 @@ those numbers when depositing/withdrawing to see the full flow:
    MoMo" -> status flips to `processing`, then `approved` once MTN
    confirms.
 
-## 6. Going live later
+## 8. Going live later
+
+Dashboards (admin, brand, influencer) and the landing page now refresh
+automatically when data changes (e.g. an admin updates a view count) instead
+of only on page load. This needs Realtime turned on for the relevant tables:
+
+Dashboard → **Database** → **Replication** → toggle ON for:
+- `submissions`
+- `campaigns`
+- `deposits`
+- `withdrawals`
+
+Without this, the pages still work — they just won't auto-refresh until the
+person manually reloads.
+
+## 9. Going live for real
 
 Set `MOMO_ENV=production`, request your production subscription keys and
 API user/key from MTN for your market, set `MOMO_CURRENCY` to the real

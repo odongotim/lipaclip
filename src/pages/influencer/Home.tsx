@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { useNavigate, Link } from 'react-router-dom'
+import { supabase, getCurrentUser, subscribeToTable } from '../../lib/supabase'
 import InfluencerSidebar from '../../components/InfluencerSidebar'
 
 type Campaign = {
@@ -22,10 +22,15 @@ export default function InfluencerHome() {
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
   const [mySubmissions, setMySubmissions] = useState<Record<string, number>>({})
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => {
+    loadData()
+    const unsub1 = subscribeToTable('submissions', loadData)
+    const unsub2 = subscribeToTable('campaigns', loadData)
+    return () => { unsub1(); unsub2() }
+  }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (prof?.role !== 'influencer') { navigate('/'); return }
@@ -59,11 +64,12 @@ export default function InfluencerHome() {
   }
 
   const handleSubmit = async (campaignId: string) => {
+    if (!isVerified) { alert('Please add and verify at least one social media account before submitting videos.'); return }
     const url = videoUrls[campaignId]
     if (!url) return
     setSubmitting(campaignId)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return
 
     // Check budget remaining
@@ -108,6 +114,7 @@ export default function InfluencerHome() {
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
   const budgetPct = (camp: Campaign) => Math.min(((camp.spent || 0) / camp.budget) * 100, 100)
   const remaining = (camp: Campaign) => camp.budget - (camp.spent || 0)
+  const isVerified = profile?.is_verified || profile?.tiktok_verified
 
   if (loading) return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center">
@@ -121,6 +128,17 @@ export default function InfluencerHome() {
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
         <h1 className="text-stone-900 text-2xl font-bold mb-1">Browse Campaigns</h1>
         <p className="text-stone-500 text-sm mb-8">Post multiple videos per campaign. All views add up!</p>
+
+        {!isVerified && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
+            <svg className="w-6 h-6 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <div className="flex-1">
+              <div className="text-amber-700 font-semibold text-sm">Verify a social account to start submitting</div>
+              <div className="text-stone-500 text-xs mt-0.5">Add at least one social link and wait for admin verification before you can submit videos.</div>
+            </div>
+            <Link to="/influencer/socials" className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex-shrink-0">Add Socials</Link>
+          </div>
+        )}
 
         {campaigns.length === 0 ? (
           <div className="bg-white border border-stone-200 rounded-2xl p-12 text-center">
@@ -201,20 +219,28 @@ export default function InfluencerHome() {
                         {mySubmissions[camp.id]} video{mySubmissions[camp.id] > 1 ? 's' : ''} submitted. Keep posting more to earn more!
                       </div>
                     )}
-                    <input
-                      type="url"
-                      value={videoUrls[camp.id] || ''}
-                      onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
-                      placeholder="Paste your video URL to submit..."
-                      className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition"
-                    />
-                    <button
-                      onClick={() => handleSubmit(camp.id)}
-                      disabled={!videoUrls[camp.id] || submitting === camp.id}
-                      className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-2 rounded-lg transition text-sm"
-                    >
-                      {submitting === camp.id ? 'Submitting...' : '+ Submit Video'}
-                    </button>
+                    {isVerified ? (
+                      <>
+                        <input
+                          type="url"
+                          value={videoUrls[camp.id] || ''}
+                          onChange={e => setVideoUrls(prev => ({ ...prev, [camp.id]: e.target.value }))}
+                          placeholder="Paste your video URL to submit..."
+                          className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition"
+                        />
+                        <button
+                          onClick={() => handleSubmit(camp.id)}
+                          disabled={!videoUrls[camp.id] || submitting === camp.id}
+                          className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-2 rounded-lg transition text-sm"
+                        >
+                          {submitting === camp.id ? 'Submitting...' : '+ Submit Video'}
+                        </button>
+                      </>
+                    ) : (
+                      <Link to="/influencer/socials" className="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-500 font-semibold py-2 rounded-lg transition text-sm">
+                        Verify a social account to submit
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

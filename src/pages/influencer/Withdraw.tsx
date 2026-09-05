@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase, getCurrentUser } from '../../lib/supabase'
 import InfluencerSidebar from '../../components/InfluencerSidebar'
 
 type Withdrawal = {
@@ -29,7 +29,7 @@ export default function Withdraw() {
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
 
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
@@ -53,7 +53,7 @@ export default function Withdraw() {
       .order('requested_at', { ascending: false })
 
     const pendingWithdrawn = (wds || [])
-      .filter(w => w.status === 'pending' || w.status === 'approved')
+      .filter(w => w.status === 'pending' || w.status === 'processing' || w.status === 'approved')
       .reduce((a, w) => a + w.amount, 0)
 
     setAvailable(Math.max(0, totalAvailable - pendingWithdrawn))
@@ -78,7 +78,7 @@ export default function Withdraw() {
     if (!phone) { setError('Please enter your mobile money number'); return }
 
     setSubmitting(true)
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return
 
     const { error } = await supabase.from('withdrawals').insert({
@@ -205,6 +205,7 @@ export default function Withdraw() {
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       w.status === 'approved' ? 'bg-green-50 text-green-700' :
                       w.status === 'rejected' ? 'bg-red-50 text-red-600' :
+                      w.status === 'processing' ? 'bg-blue-50 text-blue-700' :
                       'bg-amber-100 text-amber-600'
                     }`}>{w.status}</span>
                   </div>

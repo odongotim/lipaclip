@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase, getCurrentUser } from '../../lib/supabase'
 import AdminSidebar from '../../components/AdminSidebar'
 
 type Influencer = {
@@ -23,7 +23,7 @@ export default function Verifications() {
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (prof?.role !== 'admin') { navigate('/'); return }

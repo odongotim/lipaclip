@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase, getCurrentUser } from '../../lib/supabase'
 import BrandSidebar from '../../components/BrandSidebar'
 import { isValidMomoPhone } from '../../lib/momo'
 
@@ -44,7 +44,7 @@ export default function NewCampaign() {
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (prof?.role !== 'brand') { navigate('/'); return }
@@ -99,7 +99,7 @@ export default function NewCampaign() {
     setLoading(true)
     setError('')
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
 
     try {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase, getCurrentUser } from '../../lib/supabase'
 import BrandSidebar from '../../components/BrandSidebar'
 
 export default function BrandSettings() {
@@ -17,7 +17,7 @@ export default function BrandSettings() {
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (prof?.role !== 'brand') { navigate('/'); return }
@@ -32,7 +32,7 @@ export default function BrandSettings() {
     setSaving(true)
     setMessage('')
     setError('')
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return
 
     const { error } = await supabase.from('profiles').update({

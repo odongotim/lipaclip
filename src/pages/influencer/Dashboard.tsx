@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase, getCurrentUser, subscribeToTable } from '../../lib/supabase'
 import InfluencerSidebar from '../../components/InfluencerSidebar'
 
 type Submission = {
@@ -21,10 +21,15 @@ export default function InfluencerDashboard() {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => {
+    loadData()
+    const unsub1 = subscribeToTable('submissions', loadData)
+    const unsub2 = subscribeToTable('campaigns', loadData)
+    return () => { unsub1(); unsub2() }
+  }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (!prof) { navigate('/login'); return }

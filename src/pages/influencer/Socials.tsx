@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase, getCurrentUser } from '../../lib/supabase'
 import InfluencerSidebar from '../../components/InfluencerSidebar'
 
 export default function Socials() {
@@ -18,7 +18,7 @@ export default function Socials() {
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) { navigate('/login'); return }
     const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (!prof) { navigate('/'); return }
@@ -34,7 +34,7 @@ export default function Socials() {
     setSaving(true)
     setMessage('')
     setError('')
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return
 
     const hasAtLeastOne = tiktok || instagram || youtube || x

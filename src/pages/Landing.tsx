@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, subscribeToTable } from '../lib/supabase'
 import heroPhoto from '../assets/hero-photo.jpg'
 
 type Campaign = {
@@ -15,10 +15,17 @@ const PLATFORM_LABELS: Record<string, string> = {
 export default function Landing() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
 
-  useEffect(() => {
+  const loadCampaigns = () => {
     supabase.from('campaigns').select('id, title, type, thumbnail_url, budget, spent, period_days, platforms')
       .eq('status', 'live').order('created_at', { ascending: false }).limit(6)
       .then(({ data }) => { if (data) setCampaigns(data) })
+  }
+
+  useEffect(() => {
+    loadCampaigns()
+    // Keep budget/spent progress live as admins update view counts and campaigns go live/complete
+    const unsub = subscribeToTable('campaigns', loadCampaigns)
+    return () => unsub()
   }, [])
 
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`

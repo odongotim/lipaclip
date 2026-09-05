@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
         await admin.from('campaigns').update({ status: 'live', starts_at: new Date().toISOString() }).eq('id', deposit.campaign_id)
       } else if (status === 'FAILED') {
         await admin.from('deposits').update({ status: 'failed', momo_status: status }).eq('id', deposit.id)
+        await admin.from('campaigns').update({ status: 'failed' }).eq('id', deposit.campaign_id)
       } else {
         await admin.from('deposits').update({ momo_status: status }).eq('id', deposit.id)
       }
