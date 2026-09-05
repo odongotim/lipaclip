@@ -37,21 +37,35 @@ export default function Views() {
   const handleUpdateViews = async (sub: Submission) => {
     setSaving(true)
     const payPer1k = sub.campaigns?.pay_per_1k || 0
-    const earnings = Math.round((newViews / 1000) * payPer1k)
+    const budget = sub.campaigns?.budget || 0
+    const naiveEarnings = Math.round((newViews / 1000) * payPer1k)
+
+    // Don't let this submission's earnings push the campaign's total earned past its
+    // budget. Rejected submissions don't count against the budget (their earnings are
+    // zeroed out when rejected — see handleReject).
+    const { data: otherSubs } = await supabase
+      .from('submissions')
+      .select('earnings')
+      .eq('campaign_id', sub.campaign_id)
+      .neq('id', sub.id)
+      .neq('status', 'rejected')
+
+    const otherEarnings = (otherSubs || []).reduce((a: number, s: any) => a + (s.earnings || 0), 0)
+    const remainingBudget = Math.max(0, budget - otherEarnings)
+    const earnings = Math.min(naiveEarnings, remainingBudget)
+    const newSpent = Math.min(otherEarnings + earnings, budget)
 
     await supabase.from('submissions').update({ views: newViews, earnings, last_checked_at: new Date().toISOString() }).eq('id', sub.id)
+    await supabase.from('campaigns').update({ spent: newSpent }).eq('id', sub.campaign_id)
 
-    // Update campaign spent
-    const { data: allSubs } = await supabase.from('submissions').select('earnings').eq('campaign_id', sub.campaign_id)
-    const totalSpent = (allSubs || []).reduce((a: number, s: any) => a + (s.earnings || 0), 0)
-
-    // Don't allow spent to exceed budget
-    const cappedSpent = Math.min(totalSpent, sub.campaigns?.budget || 0)
-    await supabase.from('campaigns').update({ spent: cappedSpent }).eq('id', sub.campaign_id)
-
-    setSubmissions(submissions.map(s => s.id === sub.id ? { ...s, views: newViews, earnings } : s))
-    setMessage('Views updated!')
-    setTimeout(() => setMessage(''), 3000)
+    setSubmissions(submissions.map(s => s.id === sub.id
+      ? { ...s, views: newViews, earnings, campaigns: { ...s.campaigns, spent: newSpent } }
+      : (s.campaign_id === sub.campaign_id ? { ...s, campaigns: { ...s.campaigns, spent: newSpent } } : s)
+    ))
+    setMessage(earnings < naiveEarnings
+      ? `Views updated! Earnings capped at ${fmtUGX(earnings)} — this campaign's budget is fully allocated.`
+      : 'Views updated!')
+    setTimeout(() => setMessage(''), 4000)
     setEditing(null)
     setSaving(false)
   }
@@ -64,8 +78,19 @@ export default function Views() {
   }
 
   const handleReject = async (id: string) => {
-    await supabase.from('submissions').update({ status: 'rejected' }).eq('id', id)
-    setSubmissions(submissions.map(s => s.id === id ? { ...s, status: 'rejected' } : s))
+    const sub = submissions.find(s => s.id === id)
+    await supabase.from('submissions').update({ status: 'rejected', earnings: 0 }).eq('id', id)
+
+    // Rejecting frees up the budget this submission had been counted against
+    if (sub && (sub.earnings || 0) > 0) {
+      const newSpent = Math.max(0, (sub.campaigns?.spent || 0) - (sub.earnings || 0))
+      await supabase.from('campaigns').update({ spent: newSpent }).eq('id', sub.campaign_id)
+      setSubmissions(submissions.map(s => s.campaign_id === sub.campaign_id
+        ? { ...s, ...(s.id === id ? { status: 'rejected', earnings: 0 } : {}), campaigns: { ...s.campaigns, spent: newSpent } }
+        : s))
+    } else {
+      setSubmissions(submissions.map(s => s.id === id ? { ...s, status: 'rejected', earnings: 0 } : s))
+    }
   }
 
   const copyLink = (url: string, id: string) => {
@@ -75,6 +100,19 @@ export default function Views() {
   }
 
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
+
+  // Group submissions by campaign so we can show one "budget earned by everyone" bar per campaign
+  const campaignGroups = (() => {
+    const map = new Map<string, { title: string; budget: number; spent: number; subs: Submission[] }>()
+    submissions.forEach(s => {
+      const key = s.campaign_id
+      if (!map.has(key)) {
+        map.set(key, { title: s.campaigns?.title || 'Unknown Campaign', budget: s.campaigns?.budget || 0, spent: s.campaigns?.spent || 0, subs: [] })
+      }
+      map.get(key)!.subs.push(s)
+    })
+    return Array.from(map.entries()).map(([id, g]) => ({ id, ...g }))
+  })()
 
   if (loading) return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center">
@@ -91,8 +129,20 @@ export default function Views() {
 
         {message && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
 
-        <div className="space-y-4">
-          {submissions.map(sub => (
+        <div className="space-y-8">
+          {campaignGroups.map(group => (
+            <div key={group.id}>
+              <div className="bg-white border border-stone-200 rounded-xl p-4 mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-stone-900 font-semibold text-sm">{group.title}</h2>
+                  <span className="text-stone-500 text-xs">{fmtUGX(group.spent)} of {fmtUGX(group.budget)} earned</span>
+                </div>
+                <div className="w-full bg-stone-200 rounded-full h-2">
+                  <div className="bg-amber-600 h-2 rounded-full transition-all" style={{ width: `${group.budget > 0 ? Math.min((group.spent / group.budget) * 100, 100) : 0}%` }} />
+                </div>
+              </div>
+              <div className="space-y-4">
+                {group.subs.map(sub => (
             <div key={sub.id} className="bg-white border border-stone-200 rounded-xl p-4">
               <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
                 <div>
@@ -142,6 +192,9 @@ export default function Views() {
                   </>}
                 </div>
               )}
+            </div>
+                ))}
+              </div>
             </div>
           ))}
           {submissions.length === 0 && <div className="text-center py-12"><p className="text-stone-500">No submissions yet</p></div>}
