@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import logo from '../assets/logo.jpg'
+import { IconDashboard, IconPlusCircle, IconSettings, IconLogout } from './icons'
 
 type Props = { userName?: string; logoUrl?: string }
 
 const links = [
-  { label: 'Dashboard', to: '/brand' },
-  { label: 'New Campaign', to: '/brand/new-campaign' },
-  { label: 'Settings', to: '/brand/settings' },
+  { label: 'Dashboard', to: '/brand', icon: IconDashboard },
+  { label: 'New Campaign', to: '/brand/new-campaign', icon: IconPlusCircle },
+  { label: 'Settings', to: '/brand/settings', icon: IconSettings },
 ]
 
 export default function BrandSidebar({ userName, logoUrl }: Props) {
@@ -23,7 +24,8 @@ export default function BrandSidebar({ userName, logoUrl }: Props) {
 
   const navLinks = links.map(item => (
     <Link key={item.to} to={item.to} onClick={() => setOpen(false)}
-      className={`px-4 py-3 rounded-lg text-sm transition block ${location.pathname === item.to ? 'bg-amber-100 text-amber-600 font-semibold' : 'text-stone-500 hover:text-stone-900 hover:bg-amber-50'}`}>
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition ${location.pathname === item.to ? 'bg-amber-100 text-amber-600 font-semibold' : 'text-stone-500 hover:text-stone-900 hover:bg-amber-50'}`}>
+      <item.icon className="w-5 h-5 flex-shrink-0" />
       {item.label}
     </Link>
   ))
@@ -38,7 +40,10 @@ export default function BrandSidebar({ userName, logoUrl }: Props) {
   const footer = (
     <div className="mt-auto pt-6 border-t border-stone-200">
       <div className="text-stone-400 text-xs mb-3 truncate">{userName}</div>
-      <button onClick={handleLogout} className="text-red-600 hover:text-red-700 text-sm transition">Logout</button>
+      <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm transition">
+        <IconLogout className="w-4 h-4" />
+        Logout
+      </button>
     </div>
   )
 

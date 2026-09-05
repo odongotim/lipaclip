@@ -2,12 +2,27 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import logo from '../assets/logo.jpg'
+import { IconGoogle } from '../components/icons'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const handleGoogleLogin = async () => {
+    setError('')
+    setGoogleLoading(true)
+    // No role to stash here — an existing account keeps its role; a brand-new
+    // signer-in defaults to influencer in the callback page.
+    localStorage.removeItem('lipaclip_pending_role')
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
+    if (error) { setError(error.message); setGoogleLoading(false) }
+  }
 
   const handleLogin = async () => {
     setLoading(true)
@@ -53,6 +68,22 @@ export default function Login() {
         <div className="bg-white border border-stone-200 rounded-2xl p-8 backdrop-blur-sm">
           <h2 className="font-display text-stone-900 text-xl font-bold mb-6 tracking-tight">Login to your account</h2>
           {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
+
+          <button
+            onClick={handleGoogleLogin}
+            disabled={googleLoading}
+            className="w-full flex items-center justify-center gap-2.5 border border-stone-300 hover:border-stone-400 disabled:opacity-50 text-stone-900 font-semibold py-3 rounded-lg transition text-sm mb-5"
+          >
+            <IconGoogle className="w-5 h-5" />
+            {googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}
+          </button>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px bg-stone-200" />
+            <span className="text-stone-400 text-xs">or login with email</span>
+            <div className="flex-1 h-px bg-stone-200" />
+          </div>
+
           <div className="space-y-4">
             <div>
               <label className="text-stone-500 text-sm mb-1 block">Email</label>
