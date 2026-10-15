@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import Landing from './pages/Landing'
 import ToastHost from './components/ToastHost'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -54,6 +54,17 @@ const TITLES: Record<string, string> = {
 // Keeps the browser tab title and scroll position in step with the page.
 function RouteEffects() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+
+  // Safety net: if a sign-in or reset link lands on the home page (this happens when the
+  // redirect URL is missing from Supabase's allow-list), forward it to the right screen.
+  useEffect(() => {
+    if (pathname !== '/') return
+    const { hash, search } = window.location
+    if (hash.includes('type=recovery')) navigate('/reset-password' + hash, { replace: true })
+    else if (hash.includes('access_token=') || search.includes('code=')) navigate('/auth/callback' + search + hash, { replace: true })
+  }, [pathname, navigate])
+
   useEffect(() => {
     const t = TITLES[pathname]
     document.title = t ? `${t} | LipaClip` : 'LipaClip: Pay-per-view creator campaigns in Uganda'
