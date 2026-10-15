@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import AdminSidebar from '../../components/AdminSidebar'
+import PageLoader from '../../components/PageLoader'
+import StatusBadge from '../../components/StatusBadge'
 
 type Deposit = {
   id: string; amount: number; service_fee: number; total_charged: number
@@ -113,9 +115,7 @@ export default function Withdrawals() {
   const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending').length
 
   if (loading) return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
-    </div>
+    <PageLoader />
   )
 
   return (
@@ -125,14 +125,14 @@ export default function Withdrawals() {
         <h1 className="text-stone-900 text-2xl font-bold mb-1">Payments & Withdrawals</h1>
         <p className="text-stone-500 text-sm mb-6">Monitor MTN Mobile Money deposits (auto-verified) and disburse withdrawals</p>
 
-        {message && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
+        {message && <div role="status" className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
-          <button onClick={() => setTab('deposits')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${tab === 'deposits' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'}`}>
+          <button onClick={() => setTab('deposits')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${tab === 'deposits' ? 'bg-brand-700 text-white' : 'bg-brand-50 text-brand-700 hover:bg-brand-100'}`}>
             Deposits {pendingDeposits > 0 && <span className="ml-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">{pendingDeposits}</span>}
           </button>
-          <button onClick={() => setTab('withdrawals')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${tab === 'withdrawals' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'}`}>
+          <button onClick={() => setTab('withdrawals')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${tab === 'withdrawals' ? 'bg-brand-700 text-white' : 'bg-brand-50 text-brand-700 hover:bg-brand-100'}`}>
             Withdrawals {pendingWithdrawals > 0 && <span className="ml-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">{pendingWithdrawals}</span>}
           </button>
         </div>
@@ -146,12 +146,12 @@ export default function Withdrawals() {
                     <h3 className="text-stone-900 font-semibold text-sm">{dep.profiles?.display_name}</h3>
                     <div className="text-stone-400 text-xs mb-1">{dep.profiles?.email}</div>
                     <div className="text-stone-500 text-xs">Campaign: {dep.campaigns?.title}</div>
-                    <div className="text-amber-600 text-xs mt-1 font-mono">Ref: {dep.momo_reference_id}</div>
+                    <div className="text-brand-700 text-xs mt-1 font-mono">Ref: {dep.momo_reference_id}</div>
                     <div className="text-stone-400 text-xs">{new Date(dep.created_at).toLocaleString()}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-amber-600 font-bold">{fmtUGX(dep.total_charged)}</div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${dep.status === 'completed' ? 'bg-green-50 text-green-700' : dep.status === 'failed' ? 'bg-red-50 text-red-600' : 'bg-amber-100 text-amber-600'}`}>{dep.status}</span>
+                    <div className="text-brand-700 font-bold">{fmtUGX(dep.total_charged)}</div>
+                    <StatusBadge status={dep.status} />
                   </div>
                   {dep.status === 'pending' && (
                     <div className="flex gap-2 w-full">
@@ -186,7 +186,7 @@ export default function Withdrawals() {
                   <div className="text-right">
                     <div className="text-green-700 font-bold">{fmtUGX(wd.net_amount)}</div>
                     <div className="text-stone-400 text-xs">fee: {fmtUGX(wd.fee)}</div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${wd.status === 'approved' ? 'bg-green-50 text-green-700' : wd.status === 'rejected' ? 'bg-red-50 text-red-600' : wd.status === 'processing' ? 'bg-blue-50 text-blue-700' : 'bg-amber-100 text-amber-600'}`}>{wd.status}</span>
+                    <StatusBadge status={wd.status} />
                   </div>
                   {wd.status === 'pending' && (
                     <div className="flex gap-2 w-full">

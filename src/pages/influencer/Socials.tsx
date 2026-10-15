@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import InfluencerSidebar from '../../components/InfluencerSidebar'
+import PageLoader from '../../components/PageLoader'
 
 export default function Socials() {
   const navigate = useNavigate()
@@ -69,24 +70,22 @@ export default function Socials() {
   const isVerified = profile?.is_verified || profile?.tiktok_verified
 
   if (loading) return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
-    </div>
+    <PageLoader />
   )
 
   return (
     <div className="min-h-screen bg-stone-50 flex">
       <InfluencerSidebar userName={profile?.display_name} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-stone-900 text-2xl font-bold mb-1">My Socials</h1>
+        <h1 className="text-stone-900 text-2xl font-bold mb-1">My socials</h1>
         <p className="text-stone-500 text-sm mb-8">Add your social media links. Admin will verify them.</p>
 
-        {message && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
-        {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
+        {message && <div role="status" className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
+        {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
 
         {/* Verification status */}
         {isVerified ? (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
+          <div role="status" className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
             <svg className="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <div>
               <div className="text-green-700 font-semibold text-sm">Your profile is verified!</div>
@@ -95,9 +94,9 @@ export default function Socials() {
           </div>
         ) : (
           <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
-            <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <svg className="w-6 h-6 text-brand-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <div>
-              <div className="text-amber-600 font-semibold text-sm">Pending admin verification</div>
+              <div className="text-brand-700 font-semibold text-sm">Pending admin verification</div>
               <div className="text-stone-500 text-xs mt-0.5">Add your links below and wait for admin to verify</div>
             </div>
           </div>
@@ -112,7 +111,7 @@ export default function Socials() {
             </div>
             <input type="url" value={tiktok} onChange={e => setTiktok(e.target.value)}
               placeholder="https://www.tiktok.com/@username"
-              className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition" />
+              className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
           </div>
 
           {/* Instagram */}
@@ -123,7 +122,7 @@ export default function Socials() {
             </div>
             <input type="url" value={instagram} onChange={e => setInstagram(e.target.value)}
               placeholder="https://www.instagram.com/username"
-              className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition" />
+              className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
           </div>
 
           {/* YouTube */}
@@ -134,7 +133,7 @@ export default function Socials() {
             </div>
             <input type="url" value={youtube} onChange={e => setYoutube(e.target.value)}
               placeholder="https://www.youtube.com/@channel"
-              className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition" />
+              className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
           </div>
 
           {/* X */}
@@ -145,11 +144,11 @@ export default function Socials() {
             </div>
             <input type="url" value={x} onChange={e => setX(e.target.value)}
               placeholder="https://x.com/username"
-              className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition" />
+              className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
           </div>
 
           <button onClick={handleSave} disabled={saving}
-            className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm">
+            className="w-full bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm">
             {saving ? 'Saving...' : 'Save Social Links'}
           </button>
         </div>

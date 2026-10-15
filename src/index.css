@@ -2,6 +2,18 @@
 @import "tailwindcss";
 
 @theme {
+  /* Brand colour: deep teal (#0f766e is the main shade). Change these ten values to re-colour the whole app. */
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-300: #5eead4;
+  --color-brand-400: #2dd4bf;
+  --color-brand-500: #14b8a6;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #115e59;
+  --color-brand-900: #134e4a;
+
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-display: 'Manrope', 'Inter', sans-serif;
 }
@@ -22,7 +34,7 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #d97706;
+  outline: 2px solid var(--color-brand-600);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -46,4 +58,30 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+/* ---- Polish layer ---- */
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+::selection { background: var(--color-brand-200); color: #1c1917; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, [role="button"], summary { touch-action: manipulation; }
+button:disabled { cursor: not-allowed; }
+
+/* Form controls keep a visible ring even where Tailwind removes the outline */
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-600) 25%, transparent);
+}
+
+/* iOS Safari zooms the page when a focused field is under 16px. Stop that on phones. */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Number fields: no spinner arrows, they fight with touch scrolling */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }

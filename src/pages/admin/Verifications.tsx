@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import AdminSidebar from '../../components/AdminSidebar'
+import PageLoader from '../../components/PageLoader'
 
 type Influencer = {
   id: string; display_name: string; email: string; phone: string
@@ -19,6 +20,7 @@ export default function Verifications() {
   const [editData, setEditData] = useState<any>({})
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [creatorProfiles, setCreatorProfiles] = useState<Record<string, any>>({})
 
   useEffect(() => { loadData() }, [])
 
@@ -30,6 +32,9 @@ export default function Verifications() {
     setProfile(prof)
     const { data: infs } = await supabase.from('profiles').select('*').eq('role', 'influencer').order('created_at', { ascending: false })
     if (infs) setInfluencers(infs)
+    // Self-reported audience stats (requires the creator_profiles migration; silently skipped if absent)
+    const { data: cps } = await supabase.from('creator_profiles').select('*')
+    if (cps) setCreatorProfiles(Object.fromEntries(cps.map((c: any) => [c.id, c])))
     setLoading(false)
   }
 
@@ -41,6 +46,14 @@ export default function Verifications() {
     }).eq('id', id)
     setInfluencers(influencers.map(i => i.id === id ? { ...i, is_verified: newStatus, tiktok_verified: newStatus } : i))
     setMessage(`Influencer ${newStatus ? 'verified' : 'unverified'} successfully!`)
+    setTimeout(() => setMessage(''), 3000)
+  }
+
+  const handleVerifyStats = async (id: string, verified: boolean) => {
+    const { error } = await supabase.from('creator_profiles').update({ stats_verified: verified }).eq('id', id)
+    if (error) { setMessage(`Could not update: ${error.message}`); setTimeout(() => setMessage(''), 4000); return }
+    setCreatorProfiles(prev => ({ ...prev, [id]: { ...prev[id], stats_verified: verified } }))
+    setMessage(`Audience stats ${verified ? 'verified' : 'unverified'}.`)
     setTimeout(() => setMessage(''), 3000)
   }
 
@@ -72,9 +85,7 @@ export default function Verifications() {
   const hasSocials = (inf: Influencer) => inf.tiktok_url || inf.instagram_url || inf.youtube_url || inf.x_url
 
   if (loading) return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
-    </div>
+    <PageLoader />
   )
 
   const pending = influencers.filter(i => !isVerified(i) && hasSocials(i))
@@ -88,14 +99,14 @@ export default function Verifications() {
         <h1 className="text-stone-900 text-2xl font-bold mb-1">Verifications</h1>
         <p className="text-stone-500 text-sm mb-6">Verify influencer social media profiles</p>
 
-        {message && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
+        {message && <div role="status" className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           {[
-            { label: 'Pending', value: pending.length, color: 'text-amber-600' },
+            { label: 'Pending', value: pending.length, color: 'text-brand-700' },
             { label: 'Verified', value: verified.length, color: 'text-green-700' },
-            { label: 'No Socials', value: noSocials.length, color: 'text-stone-500' },
+            { label: 'No socials', value: noSocials.length, color: 'text-stone-500' },
           ].map(s => (
             <div key={s.label} className="bg-white border border-stone-200 rounded-xl p-4 text-center">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
@@ -114,8 +125,8 @@ export default function Verifications() {
                     {isVerified(inf)
                       ? <span className="bg-green-50 text-green-700 text-xs px-2 py-0.5 rounded-full">Verified</span>
                       : hasSocials(inf)
-                        ? <span className="bg-amber-100 text-amber-600 text-xs px-2 py-0.5 rounded-full">Pending</span>
-                        : <span className="bg-stone-100 text-stone-500 text-xs px-2 py-0.5 rounded-full">No Socials</span>
+                        ? <span className="bg-brand-100 text-brand-700 text-xs px-2 py-0.5 rounded-full">Pending</span>
+                        : <span className="bg-stone-100 text-stone-500 text-xs px-2 py-0.5 rounded-full">No socials</span>
                     }
                   </div>
                   <div className="text-stone-400 text-xs">{inf.email}</div>
@@ -133,8 +144,14 @@ export default function Verifications() {
                       {isVerified(inf) ? 'Unverify' : 'Verify'}
                     </button>
                   )}
+                  {creatorProfiles[inf.id] && (
+                    <button onClick={() => handleVerifyStats(inf.id, !creatorProfiles[inf.id].stats_verified)}
+                      className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition ${creatorProfiles[inf.id].stats_verified ? 'bg-stone-100 hover:bg-stone-200 text-stone-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-700'}`}>
+                      {creatorProfiles[inf.id].stats_verified ? 'Unverify stats' : 'Verify stats'}
+                    </button>
+                  )}
                   <button onClick={() => editing === inf.id ? setEditing(null) : startEdit(inf)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-100 text-amber-600 transition">
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-100 hover:bg-brand-100 text-brand-700 transition">
                     {editing === inf.id ? 'Cancel' : 'Edit'}
                   </button>
                 </div>
@@ -143,11 +160,24 @@ export default function Verifications() {
               {/* Social links */}
               {editing !== inf.id && (
                 <div className="space-y-1 text-xs">
-                  {inf.tiktok_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">TikTok</span><a href={inf.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">{inf.tiktok_url}</a></div>}
-                  {inf.instagram_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">Instagram</span><a href={inf.instagram_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">{inf.instagram_url}</a></div>}
-                  {inf.youtube_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">YouTube</span><a href={inf.youtube_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">{inf.youtube_url}</a></div>}
-                  {inf.x_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">X</span><a href={inf.x_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">{inf.x_url}</a></div>}
+                  {inf.tiktok_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">TikTok</span><a href={inf.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline truncate">{inf.tiktok_url}</a></div>}
+                  {inf.instagram_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">Instagram</span><a href={inf.instagram_url} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline truncate">{inf.instagram_url}</a></div>}
+                  {inf.youtube_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">YouTube</span><a href={inf.youtube_url} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline truncate">{inf.youtube_url}</a></div>}
+                  {inf.x_url && <div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-stone-400 w-14 shrink-0">X</span><a href={inf.x_url} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline truncate">{inf.x_url}</a></div>}
                   {!hasSocials(inf) && <div className="text-stone-400 italic">No social links added yet</div>}
+                  {creatorProfiles[inf.id] && (
+                    <div className="text-stone-500 mt-1">
+                      Self-reported: {[
+                        creatorProfiles[inf.id].tiktok_followers_reported != null && `TikTok ${creatorProfiles[inf.id].tiktok_followers_reported.toLocaleString()}`,
+                        creatorProfiles[inf.id].instagram_followers != null && `IG ${creatorProfiles[inf.id].instagram_followers.toLocaleString()}`,
+                        creatorProfiles[inf.id].youtube_subscribers != null && `YT ${creatorProfiles[inf.id].youtube_subscribers.toLocaleString()}`,
+                        creatorProfiles[inf.id].x_followers != null && `X ${creatorProfiles[inf.id].x_followers.toLocaleString()}`,
+                        creatorProfiles[inf.id].avg_views != null && `avg ${creatorProfiles[inf.id].avg_views.toLocaleString()} views`,
+                        creatorProfiles[inf.id].audience_uganda_pct != null && `${creatorProfiles[inf.id].audience_uganda_pct}% Uganda`,
+                        creatorProfiles[inf.id].audience_female_pct != null && `${creatorProfiles[inf.id].audience_female_pct}% female`,
+                      ].filter(Boolean).join(' · ') || 'no numbers yet'}
+                    </div>
+                  )}
                   {inf.tiktok_followers > 0 && <div className="text-stone-500 mt-1">{inf.tiktok_followers.toLocaleString()} followers, {inf.tiktok_engagement}% engagement</div>}
                 </div>
               )}
@@ -168,11 +198,11 @@ export default function Verifications() {
                       <label className="text-stone-500 text-xs mb-1 block">{field.label}</label>
                       <input type={field.type} value={editData[field.key] || ''}
                         onChange={e => setEditData({ ...editData, [field.key]: field.type === 'number' ? Number(e.target.value) : e.target.value })}
-                        className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500 transition" />
+                        className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-brand-500 transition" />
                     </div>
                   ))}
                   <button onClick={() => handleSaveEdit(inf.id)} disabled={saving}
-                    className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-2 rounded-lg transition text-sm">
+                    className="w-full bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white font-bold py-2 rounded-lg transition text-sm">
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>

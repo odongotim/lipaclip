@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import InfluencerSidebar from '../../components/InfluencerSidebar'
+import PageLoader from '../../components/PageLoader'
+import StatusBadge from '../../components/StatusBadge'
 
 type Withdrawal = {
   id: string
@@ -100,9 +102,7 @@ export default function Withdraw() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
-    </div>
+    <PageLoader />
   )
 
   return (
@@ -114,12 +114,12 @@ export default function Withdraw() {
         <p className="text-stone-500 text-sm mb-8">Withdraw your earnings to Mobile Money</p>
 
         {message && (
-          <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">
+          <div role="status" className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">
             {message}
           </div>
         )}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">
+          <div role="alert" className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
@@ -127,14 +127,14 @@ export default function Withdraw() {
         <div className="max-w-xl space-y-6">
           {/* Balance */}
           <div className="bg-white border border-stone-200 rounded-2xl p-6">
-            <div className="text-stone-500 text-sm mb-1">Available Balance</div>
-            <div className="text-amber-600 text-4xl font-bold">{fmtUGX(available)}</div>
+            <div className="text-stone-500 text-sm mb-1">Available balance</div>
+            <div className="text-brand-700 text-4xl font-bold">{fmtUGX(available)}</div>
             <div className="text-stone-400 text-xs mt-1">From completed & approved campaigns only</div>
           </div>
 
           {/* Withdraw form */}
           <div className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
-            <h2 className="text-stone-900 font-semibold">Request Withdrawal</h2>
+            <h2 className="text-stone-900 font-semibold">Request withdrawal</h2>
 
             <div>
               <label className="text-stone-500 text-sm mb-1 block">
@@ -146,18 +146,18 @@ export default function Withdraw() {
                 onChange={e => setAmount(Number(e.target.value))}
                 placeholder="e.g. 50000"
                 max={available}
-                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
               />
             </div>
 
             <div>
-              <label className="text-stone-500 text-sm mb-1 block">Mobile Money Number</label>
-              <input
+              <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-mobile-money-number">Mobile Money number</label>
+              <input id="f-mobile-money-number"
                 type="tel"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 placeholder="e.g. 0771234567"
-                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
               />
             </div>
 
@@ -172,7 +172,7 @@ export default function Withdraw() {
                   <span className="text-red-600">-{fmtUGX(fee)}</span>
                 </div>
                 <div className="border-t border-stone-200 pt-2 flex justify-between text-sm font-bold">
-                  <span className="text-stone-900">You Receive</span>
+                  <span className="text-stone-900">You receive</span>
                   <span className="text-green-700">{fmtUGX(netAmount)}</span>
                 </div>
               </div>
@@ -181,7 +181,7 @@ export default function Withdraw() {
             <button
               onClick={handleWithdraw}
               disabled={submitting || amount < minWithdrawal || amount > available}
-              className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm"
+              className="w-full bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm"
             >
               {submitting ? 'Submitting...' : 'Request Withdrawal'}
             </button>
@@ -189,7 +189,7 @@ export default function Withdraw() {
 
           {/* Withdrawal history */}
           <div>
-            <h2 className="text-stone-900 font-semibold mb-3">Withdrawal History</h2>
+            <h2 className="text-stone-900 font-semibold mb-3">Withdrawal history</h2>
             {withdrawals.length === 0 ? (
               <div className="bg-white border border-stone-200 rounded-2xl p-8 text-center">
                 <p className="text-stone-500 text-sm">No withdrawals yet</p>
@@ -202,12 +202,7 @@ export default function Withdraw() {
                       <div className="text-stone-900 font-semibold text-sm">{fmtUGX(w.net_amount)}</div>
                       <div className="text-stone-400 text-xs">{w.phone} • {new Date(w.requested_at).toLocaleDateString()}</div>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      w.status === 'approved' ? 'bg-green-50 text-green-700' :
-                      w.status === 'rejected' ? 'bg-red-50 text-red-600' :
-                      w.status === 'processing' ? 'bg-blue-50 text-blue-700' :
-                      'bg-amber-100 text-amber-600'
-                    }`}>{w.status}</span>
+                    <StatusBadge status={w.status} />
                   </div>
                 ))}
               </div>

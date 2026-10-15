@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import AdminSidebar from '../../components/AdminSidebar'
+import PageLoader from '../../components/PageLoader'
+import StatusBadge from '../../components/StatusBadge'
 
 type Submission = {
   id: string; video_url: string; views: number; earnings: number; status: string
@@ -115,19 +117,17 @@ export default function Views() {
   })()
 
   if (loading) return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
-    </div>
+    <PageLoader />
   )
 
   return (
     <div className="min-h-screen bg-stone-50 flex">
       <AdminSidebar userName={profile?.display_name} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-stone-900 text-2xl font-bold mb-1">Manage Views</h1>
+        <h1 className="text-stone-900 text-2xl font-bold mb-1">Manage views</h1>
         <p className="text-stone-500 text-sm mb-6">Update view counts and approve submissions</p>
 
-        {message && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
+        {message && <div role="status" className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
 
         <div className="space-y-8">
           {campaignGroups.map(group => (
@@ -138,7 +138,7 @@ export default function Views() {
                   <span className="text-stone-500 text-xs">{fmtUGX(group.spent)} of {fmtUGX(group.budget)} earned</span>
                 </div>
                 <div className="w-full bg-stone-200 rounded-full h-2">
-                  <div className="bg-amber-600 h-2 rounded-full transition-all" style={{ width: `${group.budget > 0 ? Math.min((group.spent / group.budget) * 100, 100) : 0}%` }} />
+                  <div className="bg-brand-600 h-2 rounded-full transition-all" style={{ width: `${group.budget > 0 ? Math.min((group.spent / group.budget) * 100, 100) : 0}%` }} />
                 </div>
               </div>
               <div className="space-y-4">
@@ -150,8 +150,8 @@ export default function Views() {
                   <div className="text-stone-400 text-xs mb-1">{sub.campaigns?.title}</div>
                   {/* Video link - copyable */}
                   <div className="flex items-center gap-2">
-                    <a href={sub.video_url} target="_blank" rel="noopener noreferrer" className="text-amber-600 text-xs hover:underline truncate max-w-xs">{sub.video_url}</a>
-                    <button onClick={() => copyLink(sub.video_url, sub.id)} className="text-stone-500 hover:text-amber-600 text-xs flex-shrink-0">
+                    <a href={sub.video_url} target="_blank" rel="noopener noreferrer" className="text-brand-700 text-xs hover:underline truncate max-w-xs">{sub.video_url}</a>
+                    <button onClick={() => copyLink(sub.video_url, sub.id)} className="text-stone-500 hover:text-brand-600 text-xs flex-shrink-0">
                       {copied === sub.id
                         ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                         : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
@@ -159,7 +159,7 @@ export default function Views() {
                     </button>
                   </div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${sub.status === 'approved' ? 'bg-green-50 text-green-700' : sub.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-100 text-amber-600'}`}>{sub.status}</span>
+                <StatusBadge status={sub.status} />
               </div>
 
               <div className="flex gap-6 mb-3">
@@ -172,7 +172,7 @@ export default function Views() {
               {editing === sub.id ? (
                 <div className="flex gap-2 items-center mt-2">
                   <input type="number" value={newViews} onChange={e => setNewViews(Number(e.target.value))}
-                    className="flex-1 bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+                    className="flex-1 bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
                     placeholder="Enter view count" />
                   <button onClick={() => handleUpdateViews(sub)} disabled={saving}
                     className="bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold px-3 py-2 rounded-lg transition disabled:opacity-50">
@@ -183,7 +183,7 @@ export default function Views() {
               ) : (
                 <div className="flex gap-2 flex-wrap mt-2">
                   <button onClick={() => { setEditing(sub.id); setNewViews(sub.views || 0) }}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-100 text-amber-600 transition">
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-100 hover:bg-brand-100 text-brand-700 transition">
                     Update Views
                   </button>
                   {sub.status === 'pending' && <>

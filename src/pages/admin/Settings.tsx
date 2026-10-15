@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import AdminSidebar from '../../components/AdminSidebar'
+import PageLoader from '../../components/PageLoader'
 
 type Settings = {
   id: number
@@ -71,9 +72,7 @@ export default function Settings() {
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
 
   if (loading || !settings) return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
-    </div>
+    <PageLoader />
   )
 
   return (
@@ -98,28 +97,28 @@ export default function Settings() {
 
           {/* Global Fees */}
           <div className="bg-white border border-stone-200 rounded-2xl p-6">
-            <h2 className="text-stone-900 font-semibold mb-4">Global Fees</h2>
+            <h2 className="text-stone-900 font-semibold mb-4">Global fees</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-stone-500 text-sm mb-1 block">Deposit Fee (%)</label>
-                <input
+                <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-deposit-fee">Deposit Fee (%)</label>
+                <input id="f-deposit-fee"
                   type="number"
                   value={settings.deposit_fee_pct}
                   onChange={e => handleChange('deposit_fee_pct', Number(e.target.value))}
                   step={0.1}
-                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
                 />
                 <p className="text-stone-400 text-xs mt-1">Charged when brands deposit money</p>
               </div>
 
               <div>
-                <label className="text-stone-500 text-sm mb-1 block">Service Fee (%) - Withdrawal</label>
-                <input
+                <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-service-fee-withdrawal">Service Fee (%) - Withdrawal</label>
+                <input id="f-service-fee-withdrawal"
                   type="number"
                   value={settings.service_fee_pct}
                   onChange={e => handleChange('service_fee_pct', Number(e.target.value))}
                   step={0.1}
-                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
                 />
                 <p className="text-stone-400 text-xs mt-1">Charged when influencers withdraw earnings</p>
               </div>
@@ -130,7 +129,7 @@ export default function Settings() {
                   type="number"
                   value={settings.min_withdrawal}
                   onChange={e => handleChange('min_withdrawal', Number(e.target.value))}
-                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
                 />
               </div>
             </div>
@@ -146,39 +145,39 @@ export default function Settings() {
               <h2 className="text-stone-900 font-semibold mb-4">{camp.type} Campaign Settings</h2>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-stone-500 text-sm mb-1 block">Min Budget</label>
-                  <input
+                  <label className="text-stone-500 text-sm mb-1 block" htmlFor={`f-${camp.prefix}-min-budget`}>Min budget</label>
+                  <input id={`f-${camp.prefix}-min-budget`}
                     type="number"
                     value={settings[`${camp.prefix}_min_budget` as keyof Settings]}
                     onChange={e => handleChange(`${camp.prefix}_min_budget` as keyof Settings, Number(e.target.value))}
-                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-stone-500 text-sm mb-1 block">Max Budget</label>
-                  <input
+                  <label className="text-stone-500 text-sm mb-1 block" htmlFor={`f-${camp.prefix}-max-budget`}>Max budget</label>
+                  <input id={`f-${camp.prefix}-max-budget`}
                     type="number"
                     value={settings[`${camp.prefix}_max_budget` as keyof Settings]}
                     onChange={e => handleChange(`${camp.prefix}_max_budget` as keyof Settings, Number(e.target.value))}
-                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-stone-500 text-sm mb-1 block">Min Pay per 1k Views</label>
-                  <input
+                  <label className="text-stone-500 text-sm mb-1 block" htmlFor={`f-${camp.prefix}-min-pay-per-1k-views`}>Min pay per 1k views</label>
+                  <input id={`f-${camp.prefix}-min-pay-per-1k-views`}
                     type="number"
                     value={settings[`${camp.prefix}_min_perk` as keyof Settings]}
                     onChange={e => handleChange(`${camp.prefix}_min_perk` as keyof Settings, Number(e.target.value))}
-                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-stone-500 text-sm mb-1 block">Max Pay per 1k Views</label>
-                  <input
+                  <label className="text-stone-500 text-sm mb-1 block" htmlFor={`f-${camp.prefix}-max-pay-per-1k-views`}>Max pay per 1k views</label>
+                  <input id={`f-${camp.prefix}-max-pay-per-1k-views`}
                     type="number"
                     value={settings[`${camp.prefix}_max_perk` as keyof Settings]}
                     onChange={e => handleChange(`${camp.prefix}_max_perk` as keyof Settings, Number(e.target.value))}
-                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
                   />
                 </div>
               </div>
@@ -188,7 +187,7 @@ export default function Settings() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm"
+            className="w-full bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm"
           >
             {saving ? 'Saving...' : 'Save Settings'}
           </button>

@@ -1,5 +1,11 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Landing from './pages/Landing'
+import ToastHost from './components/ToastHost'
+import ErrorBoundary from './components/ErrorBoundary'
+import NotFound from './pages/NotFound'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
 import Signup from './pages/Signup'
@@ -8,9 +14,11 @@ import Privacy from './pages/Privacy'
 import BrandDashboard from './pages/brand/Dashboard'
 import NewCampaign from './pages/brand/NewCampaign'
 import BrandSettings from './pages/brand/Settings'
+import Creators from './pages/brand/Creators'
 import InfluencerHome from './pages/influencer/Home'
 import InfluencerDashboard from './pages/influencer/Dashboard'
 import Socials from './pages/influencer/Socials'
+import InfluencerProfile from './pages/influencer/Profile'
 import Withdraw from './pages/influencer/Withdraw'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminUsers from './pages/admin/Users'
@@ -19,9 +27,47 @@ import AdminVerifications from './pages/admin/Verifications'
 import AdminSettings from './pages/admin/Settings'
 import AdminViews from './pages/admin/Views'
 
+const TITLES: Record<string, string> = {
+  '/login': 'Log in',
+  '/signup': 'Sign up',
+  '/forgot-password': 'Reset password',
+  '/reset-password': 'Choose a new password',
+  '/terms': 'Terms',
+  '/privacy': 'Privacy',
+  '/brand': 'Dashboard',
+  '/brand/new-campaign': 'New campaign',
+  '/brand/creators': 'Creators',
+  '/brand/settings': 'Brand settings',
+  '/influencer': 'Browse campaigns',
+  '/influencer/dashboard': 'My dashboard',
+  '/influencer/profile': 'My profile',
+  '/influencer/socials': 'My socials',
+  '/influencer/withdraw': 'Withdraw',
+  '/admin': 'Admin',
+  '/admin/users': 'Users',
+  '/admin/withdrawals': 'Payments',
+  '/admin/verifications': 'Verifications',
+  '/admin/settings': 'Settings',
+  '/admin/views': 'Views',
+}
+
+// Keeps the browser tab title and scroll position in step with the page.
+function RouteEffects() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const t = TITLES[pathname]
+    document.title = t ? `${t} | LipaClip` : 'LipaClip: Pay-per-view creator campaigns in Uganda'
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <RouteEffects />
+      <ToastHost />
+      <ErrorBoundary>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
@@ -32,8 +78,10 @@ function App() {
         <Route path="/brand" element={<BrandDashboard />} />
         <Route path="/brand/new-campaign" element={<NewCampaign />} />
         <Route path="/brand/settings" element={<BrandSettings />} />
+        <Route path="/brand/creators" element={<Creators />} />
         <Route path="/influencer" element={<InfluencerHome />} />
         <Route path="/influencer/dashboard" element={<InfluencerDashboard />} />
+        <Route path="/influencer/profile" element={<InfluencerProfile />} />
         <Route path="/influencer/socials" element={<Socials />} />
         <Route path="/influencer/withdraw" element={<Withdraw />} />
         <Route path="/admin" element={<AdminDashboard />} />
@@ -42,7 +90,11 @@ function App() {
         <Route path="/admin/verifications" element={<AdminVerifications />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/admin/views" element={<AdminViews />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

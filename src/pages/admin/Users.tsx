@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import AdminSidebar from '../../components/AdminSidebar'
+import PageLoader from '../../components/PageLoader'
 
 type User = {
   id: string
@@ -55,9 +56,7 @@ export default function Users() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
-    </div>
+    <PageLoader />
   )
 
   return (
@@ -65,7 +64,7 @@ export default function Users() {
       <AdminSidebar userName={profile?.display_name} />
 
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-stone-900 text-2xl font-bold mb-1">Manage Users</h1>
+        <h1 className="text-stone-900 text-2xl font-bold mb-1">Manage users</h1>
         <p className="text-stone-500 text-sm mb-8">View all users and manage their accounts</p>
 
         <div className="overflow-x-auto">
@@ -77,7 +76,7 @@ export default function Users() {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-stone-900 font-semibold text-sm">{user.display_name}</h3>
                       <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
-                        user.role === 'brand' ? 'bg-amber-100 text-amber-600' :
+                        user.role === 'brand' ? 'bg-brand-100 text-brand-700' :
                         user.role === 'influencer' ? 'bg-blue-50 text-blue-700' :
                         'bg-purple-50 text-purple-700'
                       }`}>{user.role}</span>
@@ -95,7 +94,7 @@ export default function Users() {
                       className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-50 ${
                         user.is_suspended
                           ? 'bg-green-50 hover:bg-green-100 text-green-700'
-                          : 'bg-amber-100 hover:bg-amber-100 text-amber-600'
+                          : 'bg-brand-100 hover:bg-brand-100 text-brand-700'
                       }`}
                     >
                       {user.is_suspended ? 'Unsuspend' : 'Suspend'}

@@ -18,6 +18,23 @@ const PLATFORMS = [
   { id: 'x', label: 'X (Twitter)' },
 ]
 
+
+function StepIndicator({ current }: { current: 'form' | 'payment' | 'waiting' }) {
+  const items = [{ id: 'form', label: 'Details' }, { id: 'payment', label: 'Payment' }, { id: 'waiting', label: 'Confirm' }]
+  const idx = items.findIndex(i => i.id === current)
+  return (
+    <ol className="flex items-center gap-2 mb-6 text-xs" aria-label="Progress">
+      {items.map((it, i) => (
+        <li key={it.id} aria-current={i === idx ? 'step' : undefined} className="flex items-center gap-2">
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${i <= idx ? 'bg-brand-700 text-white' : 'bg-stone-200 text-stone-500'}`}>{i + 1}</span>
+          <span className={i === idx ? 'text-stone-900 font-semibold' : 'text-stone-500'}>{it.label}</span>
+          {i < items.length - 1 && <span aria-hidden="true" className="w-6 h-px bg-stone-300" />}
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 export default function NewCampaign() {
   const navigate = useNavigate()
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -28,6 +45,9 @@ export default function NewCampaign() {
   const [sourceFile, setSourceFile] = useState<File | null>(null)
   const [useLink, setUseLink] = useState(true)
   const [instructions, setInstructions] = useState('')
+  const [hashtags, setHashtags] = useState('')
+  const [dos, setDos] = useState('')
+  const [donts, setDonts] = useState('')
   const [payPer1k, setPayPer1k] = useState(0)
   const [periodDays, setPeriodDays] = useState(7)
   const [budget, setBudget] = useState(0)
@@ -61,6 +81,8 @@ export default function NewCampaign() {
   const fee = settings ? Math.round((budget * settings.deposit_fee_pct) / 100) : 0
   const total = budget + fee
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
+  const estimatedViews = payPer1k > 0 && budget > 0 ? Math.floor((budget / payPer1k) * 1000) : 0
+  const parseHashtags = () => hashtags.split(/[\s,]+/).map(h => h.trim().replace(/^#+/, '')).filter(Boolean).map(h => `#${h}`)
 
   const togglePlatform = (id: string) => {
     setPlatforms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
@@ -124,6 +146,9 @@ export default function NewCampaign() {
         brand_id: user.id, title, type,
         source_url: type !== 'ugc' ? finalSourceUrl : null,
         instructions, pay_per_1k: payPer1k, period_days: periodDays, budget,
+        hashtags: parseHashtags(),
+        dos: dos.trim() || null,
+        donts: donts.trim() || null,
         thumbnail_url: profile?.logo_url || null,
         platforms,
         status: 'pending',
@@ -203,16 +228,17 @@ export default function NewCampaign() {
       <div className="min-h-screen bg-stone-50 flex">
         <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
         <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-          <h1 className="text-stone-900 text-2xl font-bold mb-1">Complete Payment</h1>
+          <StepIndicator current="payment" />
+          <h1 className="text-stone-900 text-2xl font-bold mb-1">Complete payment</h1>
           <p className="text-stone-500 text-sm mb-8">Pay via MTN Mobile Money to activate your campaign</p>
           <div className="max-w-lg">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>
+              <div role="alert" className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>
             )}
 
             {/* Checkout preview */}
             <div className="bg-white border border-stone-200 rounded-2xl p-6 mb-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0"><svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-9 4h16a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+              <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0"><svg className="w-6 h-6 text-brand-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-9 4h16a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
               <div>
                 <h2 className="text-stone-900 font-bold text-lg">MTN Mobile Money</h2>
                 <p className="text-stone-500 text-xs mt-0.5">You'll get a prompt on your phone to approve the payment.</p>
@@ -221,19 +247,19 @@ export default function NewCampaign() {
 
             {/* Phone number */}
             <div className="bg-white border border-stone-200 rounded-2xl p-6 mb-6">
-              <label className="text-stone-500 text-sm mb-1 block">MTN Mobile Money Number</label>
-              <input
+              <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-mtn-mobile-money-number">MTN Mobile Money Number</label>
+              <input id="f-mtn-mobile-money-number"
                 type="tel"
                 value={momoPhone}
                 onChange={e => setMomoPhone(e.target.value)}
                 placeholder="e.g. 0771234567"
-                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition"
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition"
               />
             </div>
 
             {/* Payment summary */}
             <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2 mb-6">
-              <h3 className="text-stone-900 font-semibold text-sm mb-3">Payment Summary</h3>
+              <h3 className="text-stone-900 font-semibold text-sm mb-3">Payment summary</h3>
               <div className="flex justify-between text-sm">
                 <span className="text-stone-500">Campaign</span>
                 <span className="text-stone-900 truncate ml-4">{title}</span>
@@ -244,11 +270,11 @@ export default function NewCampaign() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-stone-500">Service Fee ({settings?.deposit_fee_pct}%)</span>
-                <span className="text-amber-600">{fmtUGX(fee)}</span>
+                <span className="text-brand-700">{fmtUGX(fee)}</span>
               </div>
               <div className="border-t border-stone-200 pt-2 flex justify-between text-sm font-bold">
                 <span className="text-stone-900">Total to Pay</span>
-                <span className="text-amber-600">{fmtUGX(total)}</span>
+                <span className="text-brand-700">{fmtUGX(total)}</span>
               </div>
             </div>
 
@@ -261,7 +287,7 @@ export default function NewCampaign() {
             <div className="flex gap-3">
               <button
                 onClick={() => { setStep('form'); setError('') }}
-                className="flex-1 border border-stone-300 text-stone-500 font-semibold py-3 rounded-xl text-sm hover:border-amber-400 transition inline-flex items-center justify-center gap-1.5"
+                className="flex-1 border border-stone-300 text-stone-500 font-semibold py-3 rounded-xl text-sm hover:border-brand-400 transition inline-flex items-center justify-center gap-1.5"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Back
@@ -269,7 +295,7 @@ export default function NewCampaign() {
               <button
                 onClick={handleSubmitPayment}
                 disabled={loading}
-                className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition text-sm"
+                className="flex-1 bg-brand-700 hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition text-sm"
               >
                 {loading ? 'Sending prompt...' : 'Pay with MTN MoMo'}
               </button>
@@ -286,11 +312,12 @@ export default function NewCampaign() {
       <div className="min-h-screen bg-stone-50 flex">
         <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
         <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-          <div className="max-w-lg mx-auto text-center pt-12">
+          <div className="max-w-lg mx-auto pt-4"><StepIndicator current="waiting" /></div>
+          <div className="max-w-lg mx-auto text-center pt-4">
             <div className="bg-white border border-stone-200 rounded-2xl p-8">
               {momoState === 'polling' && (
                 <>
-                  <svg className="w-12 h-12 text-amber-600 mx-auto mb-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                  <svg className="w-12 h-12 text-brand-700 mx-auto mb-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                   <h2 className="text-stone-900 font-bold text-xl mb-2">Check your phone</h2>
                   <p className="text-stone-500 text-sm">{momoMessage}</p>
                 </>
@@ -300,7 +327,7 @@ export default function NewCampaign() {
                   <svg className="w-12 h-12 text-green-700 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   <h2 className="text-stone-900 font-bold text-xl mb-2">Payment Successful!</h2>
                   <p className="text-stone-500 text-sm mb-6">{momoMessage}</p>
-                  <button onClick={() => navigate('/brand')} className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-lg transition text-sm">
+                  <button onClick={() => navigate('/brand')} className="w-full bg-brand-700 hover:bg-brand-800 text-white font-bold py-3 rounded-lg transition text-sm">
                     Go to Dashboard
                   </button>
                 </>
@@ -308,13 +335,13 @@ export default function NewCampaign() {
               {momoState === 'failed' && (
                 <>
                   <svg className="w-12 h-12 text-red-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  <h2 className="text-stone-900 font-bold text-xl mb-2">Payment Not Completed</h2>
+                  <h2 className="text-stone-900 font-bold text-xl mb-2">Payment not completed</h2>
                   <p className="text-stone-500 text-sm mb-6">{momoMessage}</p>
                   <div className="space-y-2">
-                    <button onClick={() => { setStep('payment'); setError('') }} className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-lg transition text-sm">
+                    <button onClick={() => { setStep('payment'); setError('') }} className="w-full bg-brand-700 hover:bg-brand-800 text-white font-bold py-3 rounded-lg transition text-sm">
                       Try Again
                     </button>
-                    <button onClick={() => navigate('/brand')} className="w-full border border-stone-300 text-stone-500 font-semibold py-3 rounded-lg transition text-sm hover:border-amber-400">
+                    <button onClick={() => navigate('/brand')} className="w-full border border-stone-300 text-stone-500 font-semibold py-3 rounded-lg transition text-sm hover:border-brand-400">
                       Back to Dashboard
                     </button>
                   </div>
@@ -332,11 +359,12 @@ export default function NewCampaign() {
     <div className="min-h-screen bg-stone-50 flex">
       <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-stone-900 text-2xl font-bold mb-1">New Campaign</h1>
+        <StepIndicator current="form" />
+          <h1 className="text-stone-900 text-2xl font-bold mb-1">New campaign</h1>
         <p className="text-stone-500 text-sm mb-8">Fill in the details to launch your campaign</p>
         <div className="max-w-2xl">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>
+            <div role="alert" className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>
           )}
 
           {/* Logo preview */}
@@ -354,7 +382,7 @@ export default function NewCampaign() {
 
             {/* Campaign Type */}
             <div>
-              <label className="text-stone-500 text-sm mb-2 block">Campaign Type</label>
+              <label className="text-stone-500 text-sm mb-2 block">Campaign type</label>
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { value: 'logo', label: 'Logo', desc: 'Brand logo promotion' },
@@ -362,7 +390,7 @@ export default function NewCampaign() {
                   { value: 'ugc', label: 'UGC', desc: 'User generated content' },
                 ].map(t => (
                   <button key={t.value} onClick={() => setType(t.value)}
-                    className={`p-3 rounded-xl border text-left transition ${type === t.value ? 'bg-amber-100 border-amber-500 text-stone-900' : 'bg-stone-50 border-stone-200 text-stone-500 hover:border-amber-400'}`}>
+                    className={`p-3 rounded-xl border text-left transition ${type === t.value ? 'bg-brand-100 border-brand-500 text-stone-900' : 'bg-stone-50 border-stone-200 text-stone-500 hover:border-brand-400'}`}>
                     <div className="font-semibold text-sm">{t.label}</div>
                     <div className="text-xs mt-0.5 opacity-70">{t.desc}</div>
                   </button>
@@ -376,7 +404,7 @@ export default function NewCampaign() {
               <div className="flex flex-wrap gap-2">
                 {PLATFORMS.map(p => (
                   <button key={p.id} onClick={() => togglePlatform(p.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition ${platforms.includes(p.id) ? 'bg-amber-100 border-amber-500 text-stone-900' : 'bg-stone-50 border-stone-200 text-stone-500 hover:border-amber-400'}`}>
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition ${platforms.includes(p.id) ? 'bg-brand-100 border-brand-500 text-stone-900' : 'bg-stone-50 border-stone-200 text-stone-500 hover:border-brand-400'}`}>
                     <span>{p.label}</span>
                   </button>
                 ))}
@@ -385,35 +413,35 @@ export default function NewCampaign() {
 
             {/* Title */}
             <div>
-              <label className="text-stone-500 text-sm mb-1 block">Campaign Title</label>
-              <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+              <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-campaign-title">Campaign title</label>
+              <input id="f-campaign-title" type="text" value={title} onChange={e => setTitle(e.target.value)}
                 placeholder="e.g. Promote Our New App"
-                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition" />
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
             </div>
 
             {/* Source material */}
             {type !== 'ugc' && (
               <div>
-                <label className="text-stone-500 text-sm mb-2 block">Campaign Material</label>
+                <label className="text-stone-500 text-sm mb-2 block">Campaign material</label>
                 <div className="flex gap-2 mb-3">
                   <button onClick={() => setUseLink(true)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${useLink ? 'bg-amber-100 border-amber-500 text-stone-900' : 'bg-stone-50 border-stone-200 text-stone-500'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${useLink ? 'bg-brand-100 border-brand-500 text-stone-900' : 'bg-stone-50 border-stone-200 text-stone-500'}`}>
                     Use Link
                   </button>
                   <button onClick={() => setUseLink(false)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${!useLink ? 'bg-amber-100 border-amber-500 text-stone-900' : 'bg-stone-50 border-stone-200 text-stone-500'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${!useLink ? 'bg-brand-100 border-brand-500 text-stone-900' : 'bg-stone-50 border-stone-200 text-stone-500'}`}>
                     Upload File
                   </button>
                 </div>
                 {useLink ? (
                   <input type="url" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)}
                     placeholder="https://drive.google.com/..."
-                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition" />
+                    className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
                 ) : (
                   <div>
                     <input type="file" accept="video/*,image/*,.zip" onChange={handleFileChange}
-                      className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-amber-600 file:text-white file:font-semibold" />
-                    <p className="text-stone-400 text-xs mt-1">Max 15MB. For larger files, use a link (<a href="/terms" className="text-amber-600 underline">see Terms</a>)</p>
+                      className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-brand-700 file:text-white file:font-semibold" />
+                    <p className="text-stone-400 text-xs mt-1">Max 15MB. For larger files, use a link (<a href="/terms" className="text-brand-700 underline">see Terms</a>)</p>
                     {sourceFile && <p className="text-green-700 text-xs mt-1">{sourceFile.name} ({(sourceFile.size / 1024 / 1024).toFixed(1)}MB)</p>}
                   </div>
                 )}
@@ -422,10 +450,34 @@ export default function NewCampaign() {
 
             {/* Instructions */}
             <div>
-              <label className="text-stone-500 text-sm mb-1 block">Posting Instructions</label>
-              <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={4}
+              <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-posting-instructions">Posting instructions</label>
+              <textarea id="f-posting-instructions" value={instructions} onChange={e => setInstructions(e.target.value)} rows={4}
                 placeholder="Describe how influencers should post this campaign..."
-                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition resize-none" />
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition resize-none" />
+            </div>
+
+            {/* Hashtags */}
+            <div>
+              <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-campaign-hashtags-optional-separate-with">Campaign Hashtags <span className="text-stone-400">(optional, separate with spaces or commas)</span></label>
+              <input id="f-campaign-hashtags-optional-separate-with" type="text" value={hashtags} onChange={e => setHashtags(e.target.value)}
+                placeholder="e.g. #LipaClip #MadeInUganda"
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
+            </div>
+
+            {/* Do's and Don'ts */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-do-s-optional">Do's <span className="text-stone-400">(optional)</span></label>
+                <textarea id="f-do-s-optional" value={dos} onChange={e => setDos(e.target.value)} rows={3}
+                  placeholder="Show the product clearly, mention the offer..."
+                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition resize-none" />
+              </div>
+              <div>
+                <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-don-ts-optional">Don'ts <span className="text-stone-400">(optional)</span></label>
+                <textarea id="f-don-ts-optional" value={donts} onChange={e => setDonts(e.target.value)} rows={3}
+                  placeholder="No competitor mentions, no edited claims..."
+                  className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition resize-none" />
+              </div>
             </div>
 
             {/* Pay per 1k */}
@@ -435,14 +487,14 @@ export default function NewCampaign() {
                 {settings && <span className="text-stone-400 ml-2 text-xs">Min: {fmtUGX(getMinPerk())}, Max: {fmtUGX(getMaxPerk())}</span>}
               </label>
               <input type="number" value={payPer1k || ''} onChange={e => setPayPer1k(Number(e.target.value))}
-                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition" />
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
             </div>
 
             {/* Period */}
             <div>
-              <label className="text-stone-500 text-sm mb-1 block">Campaign Period (days)</label>
-              <input type="number" value={periodDays} min={1} max={90} onChange={e => setPeriodDays(Number(e.target.value))}
-                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition" />
+              <label className="text-stone-500 text-sm mb-1 block" htmlFor="f-campaign-period-days">Campaign Period (days)</label>
+              <input id="f-campaign-period-days" type="number" value={periodDays} min={1} max={90} onChange={e => setPeriodDays(Number(e.target.value))}
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
             </div>
 
             {/* Budget */}
@@ -452,25 +504,32 @@ export default function NewCampaign() {
                 {settings && <span className="text-stone-400 ml-2 text-xs">Min: {fmtUGX(getMinBudget())}, Max: {fmtUGX(getMaxBudget())}</span>}
               </label>
               <input type="number" value={budget || ''} onChange={e => setBudget(Number(e.target.value))}
-                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition" />
+                className="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-500 transition" />
             </div>
 
             {/* Summary */}
             {budget > 0 && (
               <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2">
-                <h3 className="text-stone-900 font-semibold text-sm mb-3">Payment Summary</h3>
+                <h3 className="text-stone-900 font-semibold text-sm mb-3">Payment summary</h3>
                 <div className="flex justify-between text-sm">
-                  <span className="text-stone-500">Campaign Budget</span>
+                  <span className="text-stone-500">Campaign budget</span>
                   <span className="text-stone-900">{fmtUGX(budget)}</span>
                 </div>
+                {estimatedViews > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-stone-500">Views this budget buys</span>
+                    <span className="text-stone-900">~{estimatedViews.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-stone-500">Service Fee ({settings?.deposit_fee_pct}%)</span>
-                  <span className="text-amber-600">{fmtUGX(fee)}</span>
+                  <span className="text-brand-700">{fmtUGX(fee)}</span>
                 </div>
                 <div className="border-t border-stone-200 pt-2 flex justify-between text-sm font-bold">
                   <span className="text-stone-900">Total to Pay</span>
-                  <span className="text-amber-600">{fmtUGX(total)}</span>
+                  <span className="text-brand-700">{fmtUGX(total)}</span>
                 </div>
+                <p className="text-stone-400 text-xs pt-1">Spend never goes above your budget.</p>
               </div>
             )}
 
@@ -478,7 +537,7 @@ export default function NewCampaign() {
             <button
               onClick={handleProceedToPayment}
               disabled={loading || uploading}
-              className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition text-sm inline-flex items-center justify-center gap-1.5"
+              className="w-full bg-brand-700 hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition text-sm inline-flex items-center justify-center gap-1.5"
             >
               {uploading ? 'Uploading file...' : loading ? 'Processing...' : (
                 <>

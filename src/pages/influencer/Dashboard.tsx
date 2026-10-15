@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser, subscribeToTable } from '../../lib/supabase'
 import InfluencerSidebar from '../../components/InfluencerSidebar'
+import PageLoader from '../../components/PageLoader'
+import StatCard from '../../components/StatCard'
+import EmptyState from '../../components/EmptyState'
+import StatusBadge from '../../components/StatusBadge'
 
 type Submission = {
   id: string; video_url: string; views: number; earnings: number
@@ -72,40 +76,28 @@ export default function InfluencerDashboard() {
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
 
   if (loading) return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="text-amber-600 animate-pulse text-xl">Loading...</div>
-    </div>
+    <PageLoader />
   )
 
   return (
     <div className="min-h-screen bg-stone-50 flex">
       <InfluencerSidebar userName={profile?.display_name} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
-        <h1 className="text-stone-900 text-2xl font-bold mb-1">My Dashboard</h1>
+        <h1 className="font-display text-stone-900 text-2xl font-extrabold tracking-tight mb-1">My dashboard</h1>
         <p className="text-stone-500 text-sm mb-8">Track your earnings across all videos</p>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total Earned', value: fmtUGX(totalEarned), color: 'text-amber-600' },
-            { label: 'Available to Withdraw', value: fmtUGX(availableForWithdraw), color: 'text-green-700' },
-            { label: 'Total Views', value: totalViews.toLocaleString(), color: 'text-blue-700' },
-            { label: 'Total Videos', value: submissions.length.toString(), color: 'text-purple-700' },
-          ].map(stat => (
-            <div key={stat.label} className="bg-white border border-stone-200 rounded-2xl p-5">
-              <div className={`text-2xl font-bold ${stat.color} mb-1`}>{stat.value}</div>
-              <div className="text-stone-500 text-xs">{stat.label}</div>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+          <StatCard label="Total earned" value={fmtUGX(totalEarned)} tone="money" />
+          <StatCard label="Available to withdraw" value={fmtUGX(availableForWithdraw)} tone="good" />
+          <StatCard label="Total views" value={totalViews.toLocaleString()} />
+          <StatCard label="Total videos" value={submissions.length.toString()} />
         </div>
 
         {/* Campaign summaries */}
         <h2 className="text-stone-900 font-semibold mb-4">Earnings by Campaign</h2>
         {campaignSummaries.length === 0 ? (
-          <div className="bg-white border border-stone-200 rounded-2xl p-12 text-center">
-            <div className="flex justify-center mb-3"><svg className="w-8 h-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.55-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.45.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></div>
-            <p className="text-stone-500 text-sm">No submissions yet. Browse campaigns and start earning!</p>
-          </div>
+          <EmptyState title="No videos submitted yet" description="Pick a live campaign, post it on your channel and submit the link. Earnings show up here." actionLabel="Browse campaigns" actionTo="/influencer" />
         ) : (
           <div className="space-y-3">
             {campaignSummaries.map(camp => (
@@ -122,7 +114,7 @@ export default function InfluencerDashboard() {
                       <span className="text-blue-700 text-xs">{camp.totalViews.toLocaleString()} views</span>
                       <span className="text-green-700 text-xs">{fmtUGX(camp.totalEarnings)}</span>
                       {camp.budget > 0 && camp.spent >= camp.budget && (
-                        <span className="bg-amber-100 text-amber-600 text-[10px] font-semibold px-2 py-0.5 rounded-full">Budget fully earned — extra views won't add more earnings</span>
+                        <span className="bg-brand-100 text-brand-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">Budget fully earned — extra views won't add more earnings</span>
                       )}
                     </div>
                   </div>
@@ -140,14 +132,10 @@ export default function InfluencerDashboard() {
                           <div key={sub.id} className="bg-stone-100 rounded-lg p-3">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-stone-500 text-xs font-semibold">Video {idx + 1}</span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                sub.status === 'approved' ? 'bg-green-50 text-green-700' :
-                                sub.status === 'rejected' ? 'bg-red-50 text-red-600' :
-                                'bg-amber-100 text-amber-600'
-                              }`}>{sub.status}</span>
+                              <StatusBadge status={sub.status} />
                             </div>
                             <a href={sub.video_url} target="_blank" rel="noopener noreferrer"
-                              className="text-amber-600 text-xs hover:underline truncate block mb-2">
+                              className="text-brand-700 text-xs hover:underline break-all block mb-2">
                               {sub.video_url}
                             </a>
                             <div className="flex gap-4 text-xs">

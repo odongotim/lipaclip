@@ -8,17 +8,17 @@ export default function Privacy() {
       <nav className="flex items-center justify-between px-8 py-5 border-b border-stone-200">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="LipaClip" className="w-8 h-8 rounded-full object-cover border border-stone-200" />
-          <span className="text-amber-600 text-2xl font-bold">Lipa<span className="text-stone-900">Clip</span></span>
+          <span className="text-brand-700 text-2xl font-bold">Lipa<span className="text-stone-900">Clip</span></span>
         </Link>
       </nav>
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-8 py-12">
-        <h1 className="text-4xl font-bold mb-8 text-amber-600">Privacy Policy</h1>
+        <h1 className="text-4xl font-bold mb-8 text-brand-700">Privacy policy</h1>
 
         <div className="space-y-6 text-stone-600 text-sm leading-relaxed">
           <section>
-            <h2 className="text-xl font-bold text-amber-600 mb-3">1. Information We Collect</h2>
+            <h2 className="text-xl font-bold text-brand-700 mb-3">1. Information We Collect</h2>
             <p>We collect information you provide directly, such as:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>Account information (name, email, phone)</li>
@@ -29,7 +29,7 @@ export default function Privacy() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-amber-600 mb-3">2. How We Use Your Information</h2>
+            <h2 className="text-xl font-bold text-brand-700 mb-3">2. How We Use Your Information</h2>
             <p>We use collected information to:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>Process payments and withdrawals</li>
@@ -42,12 +42,12 @@ export default function Privacy() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-amber-600 mb-3">3. Data Security</h2>
+            <h2 className="text-xl font-bold text-brand-700 mb-3">3. Data Security</h2>
             <p>We implement industry-standard security measures to protect your data. However, no method of transmission over the internet is 100% secure. We cannot guarantee absolute security of your information.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-amber-600 mb-3">4. Third-Party Services</h2>
+            <h2 className="text-xl font-bold text-brand-700 mb-3">4. Third-Party Services</h2>
             <p>We use third-party services including:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li><strong>Supabase</strong>: database and authentication</li>
@@ -58,7 +58,7 @@ export default function Privacy() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-amber-600 mb-3">5. Your Rights</h2>
+            <h2 className="text-xl font-bold text-brand-700 mb-3">5. Your Rights</h2>
             <p>You have the right to:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>Access your personal data</li>
@@ -69,22 +69,22 @@ export default function Privacy() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-amber-600 mb-3">6. Data Retention</h2>
+            <h2 className="text-xl font-bold text-brand-700 mb-3">6. Data Retention</h2>
             <p>We retain your information for as long as your account is active or as needed to provide services. You can request deletion at any time, subject to legal retention requirements.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-amber-600 mb-3">7. Changes to Privacy Policy</h2>
+            <h2 className="text-xl font-bold text-brand-700 mb-3">7. Changes to Privacy Policy</h2>
             <p>We may update this policy periodically. We will notify you of any material changes via email or through the platform.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-amber-600 mb-3">8. Contact Us</h2>
+            <h2 className="text-xl font-bold text-brand-700 mb-3">8. Contact Us</h2>
             <p>If you have privacy concerns, contact us at privacy@lipaclip.site</p>
           </section>
         </div>
 
-        <Link to="/" className="inline-flex items-center gap-1.5 mt-8 text-amber-600 hover:text-amber-700">
+        <Link to="/" className="inline-flex items-center gap-1.5 mt-8 text-brand-700 hover:text-brand-700">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           Back to Home
         </Link>
