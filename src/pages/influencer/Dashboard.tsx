@@ -6,10 +6,11 @@ import PageLoader from '../../components/PageLoader'
 import StatCard from '../../components/StatCard'
 import EmptyState from '../../components/EmptyState'
 import StatusBadge from '../../components/StatusBadge'
+import { timeAgo } from '../../lib/timeAgo'
 
 type Submission = {
   id: string; video_url: string; views: number; earnings: number
-  status: string; submitted_at: string
+  status: string; submitted_at: string; last_checked_at?: string | null
   campaigns: { id: string; title: string; type: string; pay_per_1k: number; status: string; budget: number; spent: number }
 }
 
@@ -142,6 +143,7 @@ export default function InfluencerDashboard() {
                               <span className="text-blue-700">{(sub.views || 0).toLocaleString()} views</span>
                               <span className="text-green-700">{fmtUGX(sub.earnings || 0)}</span>
                               <span className="text-stone-400">{new Date(sub.submitted_at).toLocaleDateString()}</span>
+                            {sub.status === 'approved' && sub.last_checked_at && <span className="text-stone-400">Views updated {timeAgo(sub.last_checked_at)}</span>}
                             </div>
                           </div>
                         ))}

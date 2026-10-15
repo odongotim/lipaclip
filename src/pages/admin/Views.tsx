@@ -4,10 +4,14 @@ import { supabase, getCurrentUser } from '../../lib/supabase'
 import AdminSidebar from '../../components/AdminSidebar'
 import PageLoader from '../../components/PageLoader'
 import StatusBadge from '../../components/StatusBadge'
+import { toast } from '../../lib/toast'
+import { timeAgo } from '../../lib/timeAgo'
 
 type Submission = {
   id: string; video_url: string; views: number; earnings: number; status: string
   submitted_at: string; campaign_id: string
+  last_checked_at?: string | null; views_source?: string; views_locked?: boolean
+  views_flag?: string | null; views_error?: string | null; views_error_count?: number
   profiles: { display_name: string; email: string }
   campaigns: { title: string; pay_per_1k: number; budget: number; spent: number }
 }
@@ -22,6 +26,10 @@ export default function Views() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [copied, setCopied] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState<string | null>(null)
+  const [testUrl, setTestUrl] = useState('')
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<any>(null)
 
   useEffect(() => { loadData() }, [])
 
@@ -36,40 +44,54 @@ export default function Views() {
     setLoading(false)
   }
 
+  // All earnings maths (including the budget cap) happens in the database function, under a lock.
   const handleUpdateViews = async (sub: Submission) => {
     setSaving(true)
-    const payPer1k = sub.campaigns?.pay_per_1k || 0
-    const budget = sub.campaigns?.budget || 0
-    const naiveEarnings = Math.round((newViews / 1000) * payPer1k)
-
-    // Don't let this submission's earnings push the campaign's total earned past its
-    // budget. Rejected submissions don't count against the budget (their earnings are
-    // zeroed out when rejected — see handleReject).
-    const { data: otherSubs } = await supabase
-      .from('submissions')
-      .select('earnings')
-      .eq('campaign_id', sub.campaign_id)
-      .neq('id', sub.id)
-      .neq('status', 'rejected')
-
-    const otherEarnings = (otherSubs || []).reduce((a: number, s: any) => a + (s.earnings || 0), 0)
-    const remainingBudget = Math.max(0, budget - otherEarnings)
-    const earnings = Math.min(naiveEarnings, remainingBudget)
-    const newSpent = Math.min(otherEarnings + earnings, budget)
-
-    await supabase.from('submissions').update({ views: newViews, earnings, last_checked_at: new Date().toISOString() }).eq('id', sub.id)
-    await supabase.from('campaigns').update({ spent: newSpent }).eq('id', sub.campaign_id)
-
-    setSubmissions(submissions.map(s => s.id === sub.id
-      ? { ...s, views: newViews, earnings, campaigns: { ...s.campaigns, spent: newSpent } }
-      : (s.campaign_id === sub.campaign_id ? { ...s, campaigns: { ...s.campaigns, spent: newSpent } } : s)
-    ))
-    setMessage(earnings < naiveEarnings
-      ? `Views updated! Earnings capped at ${fmtUGX(earnings)} — this campaign's budget is fully allocated.`
-      : 'Views updated!')
-    setTimeout(() => setMessage(''), 4000)
+    const { data, error } = await supabase.rpc('apply_submission_views', {
+      p_submission_id: sub.id,
+      p_views: Math.max(0, Math.floor(newViews)),
+      p_source: 'manual',
+      p_lock: true,
+      p_allow_decrease: true,
+    })
+    if (error) {
+      toast(`Could not update views: ${error.message}`, 'error')
+    } else {
+      await loadData()
+      toast(data?.capped
+        ? `Views updated. Earnings capped at ${fmtUGX(data.earnings)} because this campaign's budget is fully allocated.`
+        : 'Views updated. Auto-tracking is paused for this video until you resume it.', data?.capped ? 'info' : 'success')
+    }
     setEditing(null)
     setSaving(false)
+  }
+
+  const refreshViews = async (submissionId?: string) => {
+    setRefreshing(submissionId || 'all')
+    const { data, error } = await supabase.functions.invoke('refresh-views', { body: submissionId ? { submission_id: submissionId } : {} })
+    if (error || data?.error) {
+      toast(`Could not refresh: ${data?.error || error?.message || 'unknown error'}`, 'error')
+    } else {
+      toast(`Checked ${data.checked}: ${data.applied} updated, ${data.unchanged} unchanged, ${data.flagged} flagged, ${data.errors} errors.`, data.errors || data.flagged ? 'info' : 'success')
+      await loadData()
+    }
+    setRefreshing(null)
+  }
+
+  const resumeAuto = async (id: string) => {
+    const { error } = await supabase.from('submissions')
+      .update({ views_locked: false, views_flag: null, views_error: null, views_error_count: 0 }).eq('id', id)
+    if (error) { toast(error.message, 'error'); return }
+    setSubmissions(submissions.map(s => s.id === id ? { ...s, views_locked: false, views_flag: null, views_error: null, views_error_count: 0 } : s))
+    toast('Auto-tracking resumed for this video.', 'success')
+  }
+
+  const testLink = async () => {
+    if (!testUrl.trim()) return
+    setTesting(true); setTestResult(null)
+    const { data, error } = await supabase.functions.invoke('refresh-views', { body: { test_url: testUrl.trim() } })
+    setTestResult(error ? { ok: false, error: error.message } : data)
+    setTesting(false)
   }
 
   const handleApprove = async (id: string) => {
@@ -125,7 +147,37 @@ export default function Views() {
       <AdminSidebar userName={profile?.display_name} />
       <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
         <h1 className="text-stone-900 text-2xl font-bold mb-1">Manage views</h1>
-        <p className="text-stone-500 text-sm mb-6">Update view counts and approve submissions</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+          <p className="text-stone-500 text-sm max-w-md">Views update automatically for approved videos. Edit a count by hand to override it.</p>
+          <button onClick={() => refreshViews()} disabled={refreshing !== null}
+            className="bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-colors">
+            {refreshing === 'all' ? 'Checking views...' : 'Refresh views now'}
+          </button>
+        </div>
+
+        <details className="bg-white border border-stone-200 rounded-xl mb-6 group">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-stone-900 flex items-center justify-between [&::-webkit-details-marker]:hidden">
+            Test a link
+            <span aria-hidden="true" className="text-brand-700 text-lg leading-none transition-transform group-open:rotate-45">+</span>
+          </summary>
+          <div className="px-4 pb-4">
+            <p className="text-stone-500 text-xs mb-3">Paste a YouTube, TikTok, Instagram or X link to see what the tracker reads. Nothing is saved.</p>
+            <div className="flex gap-2">
+              <input type="url" value={testUrl} onChange={e => setTestUrl(e.target.value)} placeholder="https://www.tiktok.com/@name/video/..." aria-label="Link to test"
+                className="flex-1 min-w-0 bg-stone-50 border border-stone-200 text-stone-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+              <button onClick={testLink} disabled={testing || !testUrl.trim()}
+                className="bg-stone-900 hover:bg-stone-800 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-lg">{testing ? 'Testing...' : 'Test'}</button>
+            </div>
+            {testResult && (
+              <div className="mt-3 text-xs" role="status">
+                {testResult.ok
+                  ? <p className="text-green-800 font-semibold">{testResult.platform}: {Number(testResult.views).toLocaleString()} views</p>
+                  : <p className="text-red-700 font-semibold">{testResult.error}</p>}
+                {testResult.raw && <pre className="mt-2 bg-stone-50 border border-stone-200 rounded-lg p-3 overflow-x-auto text-[11px] text-stone-600 whitespace-pre-wrap break-all max-h-48">{testResult.raw}</pre>}
+              </div>
+            )}
+          </div>
+        </details>
 
         {message && <div role="status" className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
 
@@ -169,6 +221,16 @@ export default function Views() {
                 <div><div className="text-blue-700 font-bold text-sm">{fmtUGX(sub.campaigns?.budget || 0)}</div><div className="text-stone-400 text-xs">budget</div></div>
               </div>
 
+              {/* Tracking status */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500 mb-2">
+                <span className={`px-2 py-0.5 rounded-full ${sub.views_locked ? 'bg-stone-100 text-stone-600' : sub.views_source === 'auto' ? 'bg-green-50 text-green-800' : 'bg-stone-100 text-stone-600'}`}>
+                  {sub.views_locked ? 'Manual (auto-tracking paused)' : sub.views_source === 'auto' ? 'Auto-tracked' : 'Not auto-tracked yet'}
+                </span>
+                {sub.last_checked_at && <span>Checked {timeAgo(sub.last_checked_at)}</span>}
+              </div>
+              {sub.views_flag && <div role="alert" className="bg-amber-50 border border-amber-200 text-amber-900 text-xs px-3 py-2 rounded-lg mb-2"><strong>Needs review:</strong> {sub.views_flag}</div>}
+              {sub.views_error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg mb-2">Last check failed: {sub.views_error}{(sub.views_error_count || 0) >= 5 ? ' (retries stopped)' : ''}</div>}
+
               {editing === sub.id ? (
                 <div className="flex gap-2 items-center mt-2">
                   <input type="number" value={newViews} onChange={e => setNewViews(Number(e.target.value))}
@@ -184,8 +246,18 @@ export default function Views() {
                 <div className="flex gap-2 flex-wrap mt-2">
                   <button onClick={() => { setEditing(sub.id); setNewViews(sub.views || 0) }}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-100 hover:bg-brand-100 text-brand-700 transition">
-                    Update Views
+                    Update views
                   </button>
+                  {sub.status === 'approved' && !sub.views_locked && (
+                    <button onClick={() => refreshViews(sub.id)} disabled={refreshing !== null}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition disabled:opacity-50">
+                      {refreshing === sub.id ? 'Checking...' : 'Check now'}
+                    </button>
+                  )}
+                  {(sub.views_locked || sub.views_flag || (sub.views_error_count || 0) >= 5) && (
+                    <button onClick={() => resumeAuto(sub.id)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition">Resume auto-tracking</button>
+                  )}
                   {sub.status === 'pending' && <>
                     <button onClick={() => handleApprove(sub.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 transition">Approve</button>
                     <button onClick={() => handleReject(sub.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition">Reject</button>

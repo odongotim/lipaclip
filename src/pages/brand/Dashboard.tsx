@@ -6,6 +6,7 @@ import PageLoader from '../../components/PageLoader'
 import StatCard from '../../components/StatCard'
 import StatusBadge from '../../components/StatusBadge'
 import EmptyState from '../../components/EmptyState'
+import { timeAgo } from '../../lib/timeAgo'
 
 type Campaign = {
   id: string; title: string; type: string; budget: number; spent: number
@@ -234,6 +235,7 @@ export default function BrandDashboard() {
                   <div key={sub.id} className="flex flex-wrap items-center gap-x-2 gap-y-1.5 py-1">
                     <span className="text-stone-500 text-xs">Video {vidIdx + 1}</span>
                     <StatusBadge status={sub.status} />
+                    {sub.status === 'approved' && sub.last_checked_at && <span className="text-stone-400 text-xs">Views updated {timeAgo(sub.last_checked_at)}</span>}
                     <button onClick={() => copyLink(sub.video_url, sub.id)} className="ml-auto text-stone-500 hover:text-brand-700 text-xs flex items-center gap-1 p-1">
                       {copied === sub.id ? 'Copied' : 'Copy link'}
                     </button>
