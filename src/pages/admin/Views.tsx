@@ -6,6 +6,7 @@ import PageLoader from '../../components/PageLoader'
 import StatusBadge from '../../components/StatusBadge'
 import { toast } from '../../lib/toast'
 import { timeAgo } from '../../lib/timeAgo'
+import { functionError } from '../../lib/functions'
 
 type Submission = {
   id: string; video_url: string; views: number; earnings: number; status: string
@@ -70,7 +71,7 @@ export default function Views() {
     setRefreshing(submissionId || 'all')
     const { data, error } = await supabase.functions.invoke('refresh-views', { body: submissionId ? { submission_id: submissionId } : {} })
     if (error || data?.error) {
-      toast(`Could not refresh: ${data?.error || error?.message || 'unknown error'}`, 'error')
+      toast(`Could not refresh: ${await functionError(error, data, 'unknown error')}`, 'error')
     } else {
       toast(`Checked ${data.checked}: ${data.applied} updated, ${data.unchanged} unchanged, ${data.flagged} flagged, ${data.errors} errors.`, data.errors || data.flagged ? 'info' : 'success')
       await loadData()
@@ -90,7 +91,7 @@ export default function Views() {
     if (!testUrl.trim()) return
     setTesting(true); setTestResult(null)
     const { data, error } = await supabase.functions.invoke('refresh-views', { body: { test_url: testUrl.trim() } })
-    setTestResult(error ? { ok: false, error: error.message } : data)
+    setTestResult(error ? { ok: false, error: await functionError(error, data, 'The function failed. Is it deployed?') } : data)
     setTesting(false)
   }
 

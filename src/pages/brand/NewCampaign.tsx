@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import BrandSidebar from '../../components/BrandSidebar'
 import { isValidMomoPhone } from '../../lib/momo'
+import { functionError } from '../../lib/functions'
 
 type Settings = {
   logo_min_budget: number; logo_max_budget: number; logo_min_perk: number; logo_max_perk: number
@@ -71,6 +72,25 @@ export default function NewCampaign() {
     setProfile(prof)
     const { data } = await supabase.from('platform_settings').select('*').eq('id', 1).single()
     if (data) setSettings(data)
+
+    // Coming back to finish paying for a campaign that is still waiting for payment
+    const resumeId = new URLSearchParams(window.location.search).get('resume')
+    if (resumeId) {
+      const { data: c } = await supabase.from('campaigns').select('*').eq('id', resumeId).eq('brand_id', user.id).in('status', ['pending', 'failed']).maybeSingle()
+      if (!c) { setError('That campaign has already been paid for or no longer exists.'); return }
+      setCampaignId(c.id); setTitle(c.title); setType(c.type); setPayPer1k(c.pay_per_1k)
+      setPeriodDays(c.period_days); setBudget(c.budget); setPlatforms(c.platforms || [])
+
+      // If a payment prompt was already sent, check it first so the brand is never charged twice
+      const { data: pending } = await supabase.from('deposits').select('momo_reference_id').eq('campaign_id', c.id).eq('status', 'pending')
+        .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (pending?.momo_reference_id) {
+        setStep('waiting'); setMomoState('polling'); setMomoMessage('Checking your earlier payment...')
+        pollDepositStatus(pending.momo_reference_id)
+      } else {
+        setStep('payment')
+      }
+    }
   }
 
   const getMinBudget = () => { if (!settings) return 0; if (type === 'logo') return settings.logo_min_budget; if (type === 'clipping') return settings.clip_min_budget; return settings.ugc_min_budget }
@@ -178,7 +198,7 @@ export default function NewCampaign() {
       })
 
       if (fnError || !data?.reference_id) {
-        throw new Error(data?.error || fnError?.message || 'Could not start MTN Mobile Money payment')
+        throw new Error(await functionError(fnError, data, 'Could not start MTN Mobile Money payment'))
       }
 
       setLoading(false)

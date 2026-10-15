@@ -42,14 +42,16 @@ export default function BrandDashboard() {
     if (prof?.role !== 'brand') { navigate('/'); return }
     setProfile(prof)
 
-    const { data: camps } = await supabase.from('campaigns').select('*').eq('brand_id', user.id).neq('status', 'failed').order('created_at', { ascending: false })
+    const { data: camps } = await supabase.from('campaigns').select('*').eq('brand_id', user.id).order('created_at', { ascending: false })
     if (camps) {
       setCampaigns(camps)
+      // Money only counts once a campaign has been paid for (live or completed)
+      const paid = camps.filter((c: any) => c.status === 'live' || c.status === 'completed')
       setStats({
-        totalSpent: camps.reduce((a: number, c: any) => a + (c.spent || 0), 0),
-        totalBudget: camps.reduce((a: number, c: any) => a + (c.budget || 0), 0),
-        activeCampaigns: camps.filter((c: any) => c.status === 'live').length,
-        completedCampaigns: camps.filter((c: any) => c.status === 'completed').length,
+        totalSpent: paid.reduce((a: number, c: any) => a + (c.spent || 0), 0),
+        totalBudget: paid.reduce((a: number, c: any) => a + (c.budget || 0), 0),
+        activeCampaigns: paid.filter((c: any) => c.status === 'live').length,
+        completedCampaigns: paid.filter((c: any) => c.status === 'completed').length,
       })
 
       // Load submissions for each campaign
@@ -66,6 +68,8 @@ export default function BrandDashboard() {
   }
 
   const handleDelete = async (campId: string) => {
+    const target = campaigns.find(c => c.id === campId)
+    if (target && (target.status === 'live' || target.status === 'completed')) return // paid campaigns are kept
     if (!confirm('Delete this campaign? This cannot be undone.')) return
     await supabase.from('deposits').delete().eq('campaign_id', campId)
     await supabase.from('submissions').delete().eq('campaign_id', campId)
@@ -82,6 +86,8 @@ export default function BrandDashboard() {
   const fmtUGX = (n: number) => `UGX ${n.toLocaleString()}`
   const totalViews = Object.values(submissions).flat().reduce((a: number, s: any) => a + (s.views || 0), 0)
   const pendingReview = Object.values(submissions).flat().filter((x: any) => x.status === 'pending').length
+  const paidCampaigns = campaigns.filter(c => c.status === 'live' || c.status === 'completed')
+  const unpaidCampaigns = campaigns.filter(c => c.status !== 'live' && c.status !== 'completed')
   const costPer1k = totalViews > 0 ? Math.round((stats.totalSpent / totalViews) * 1000) : 0
 
   const reviewSubmission = async (id: string, status: 'approved' | 'rejected') => {
@@ -120,7 +126,7 @@ export default function BrandDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8">
-          <StatCard label="Total budget" value={fmtUGX(stats.totalBudget)} tone="money" />
+          <StatCard label="Funded budget" value={fmtUGX(stats.totalBudget)} tone="money" />
           <StatCard label="Total spent" value={fmtUGX(stats.totalSpent)} />
           <StatCard label="Unspent" value={fmtUGX(stats.totalBudget - stats.totalSpent)} />
           <StatCard label="Active campaigns" value={stats.activeCampaigns.toString()} />
@@ -134,8 +140,34 @@ export default function BrandDashboard() {
         {campaigns.length === 0 ? (
           <EmptyState title="No campaigns yet" description="Set a budget and a rate per 1,000 views, and creators can start posting." actionLabel="Create your first campaign" actionTo="/brand/new-campaign" />
         ) : (
+          <>
+            {unpaidCampaigns.length > 0 && (
+              <section className="mb-8" aria-labelledby="unpaid-heading">
+                <h3 id="unpaid-heading" className="text-stone-900 font-semibold text-sm mb-1">Waiting for payment</h3>
+                <p className="text-stone-500 text-xs mb-3">A campaign goes live, and its budget counts here, only after the payment is complete.</p>
+                <div className="space-y-3">
+                  {unpaidCampaigns.map(camp => (
+                    <div key={camp.id} className="bg-white border border-dashed border-stone-300 rounded-2xl p-4 flex flex-wrap items-center gap-3">
+                      <div className="flex-1 min-w-[180px]">
+                        <div className="text-stone-900 font-semibold text-sm">{camp.title}</div>
+                        <div className="text-stone-500 text-xs capitalize">{camp.type} campaign, {fmtUGX(camp.budget)} budget</div>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${camp.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-brand-100 text-brand-800'}`}>
+                        {camp.status === 'failed' ? 'Payment failed' : 'Awaiting payment'}
+                      </span>
+                      <Link to={`/brand/new-campaign?resume=${camp.id}`} className="bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">
+                        {camp.status === 'failed' ? 'Try payment again' : 'Complete payment'}
+                      </Link>
+                      <button onClick={() => handleDelete(camp.id)} className="text-red-700 hover:text-red-800 text-xs font-semibold px-2 py-2">Delete</button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {paidCampaigns.length > 0 && (
           <div className="space-y-4">
-            {campaigns.map(camp => (
+            {paidCampaigns.map(camp => (
               <div key={camp.id} className="bg-white border border-stone-200 rounded-2xl p-5">
                 <div className="flex items-center gap-4">
                   {/* Thumbnail */}
@@ -168,8 +200,6 @@ export default function BrandDashboard() {
                       <span>{fmtUGX(camp.budget)} budget</span>
                     </div>
                   </div>
-
-                  <button onClick={() => handleDelete(camp.id)} aria-label={`Delete ${camp.title}`} title="Delete campaign" className="text-red-600 hover:text-red-700 flex-shrink-0 p-2 -m-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" /></svg></button>
                 </div>
 
                 {/* Campaign stats and submissions */}
@@ -264,6 +294,8 @@ export default function BrandDashboard() {
               </div>
             ))}
           </div>
+            )}
+          </>
         )}
       </main>
     </div>

@@ -4,6 +4,7 @@ import { supabase, getCurrentUser } from '../../lib/supabase'
 import AdminSidebar from '../../components/AdminSidebar'
 import PageLoader from '../../components/PageLoader'
 import StatusBadge from '../../components/StatusBadge'
+import { functionError } from '../../lib/functions'
 
 type Deposit = {
   id: string; amount: number; service_fee: number; total_charged: number
@@ -75,7 +76,7 @@ export default function Withdrawals() {
     setMessage('')
     const { data, error } = await supabase.functions.invoke('momo-disburse', { body: { withdrawalId: id } })
     if (error || data?.error) {
-      setMessage(data?.error || error?.message || 'Failed to send MTN MoMo payout')
+      setMessage(await functionError(error, data, 'Failed to send MTN MoMo payout'))
       setActionId(null)
       return
     }
