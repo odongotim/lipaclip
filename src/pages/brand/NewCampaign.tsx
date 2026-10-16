@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
-import BrandSidebar from '../../components/BrandSidebar'
+import BrandNav from '../../components/BrandNav'
 import { isValidMomoPhone } from '../../lib/momo'
 import { functionError } from '../../lib/functions'
 
@@ -245,9 +245,9 @@ export default function NewCampaign() {
   // Payment step
   if (step === 'payment') {
     return (
-      <div className="min-h-screen bg-stone-50 flex">
-        <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
-        <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+      <div className="min-h-screen bg-stone-50 flex flex-col">
+        <BrandNav userName={profile?.display_name} />
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
           <StepIndicator current="payment" />
           <h1 className="text-stone-900 text-2xl font-bold mb-1">Complete payment</h1>
           <p className="text-stone-500 text-sm mb-8">Pay via MTN Mobile Money to activate your campaign</p>
@@ -329,9 +329,9 @@ export default function NewCampaign() {
   // Waiting step — polling MTN MoMo for the request-to-pay outcome
   if (step === 'waiting') {
     return (
-      <div className="min-h-screen bg-stone-50 flex">
-        <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
-        <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+      <div className="min-h-screen bg-stone-50 flex flex-col">
+        <BrandNav userName={profile?.display_name} />
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
           <div className="max-w-lg mx-auto pt-4"><StepIndicator current="waiting" /></div>
           <div className="max-w-lg mx-auto text-center pt-4">
             <div className="bg-white border border-stone-200 rounded-2xl p-8">
@@ -376,9 +376,9 @@ export default function NewCampaign() {
 
   // Form step
   return (
-    <div className="min-h-screen bg-stone-50 flex">
-      <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
-      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+      <BrandNav userName={profile?.display_name} />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
         <StepIndicator current="form" />
           <h1 className="text-stone-900 text-2xl font-bold mb-1">New campaign</h1>
         <p className="text-stone-500 text-sm mb-8">Fill in the details to launch your campaign</p>

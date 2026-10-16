@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
-import BrandSidebar from '../../components/BrandSidebar'
+import BrandNav from '../../components/BrandNav'
 import { CATEGORIES } from '../influencer/Profile'
 import PageLoader from '../../components/PageLoader'
 import EmptyState from '../../components/EmptyState'
@@ -122,9 +122,9 @@ export default function Creators() {
   )
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
-      <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
-      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+      <BrandNav userName={profile?.display_name} />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
         <h1 className="text-stone-900 text-2xl font-bold mb-1">Creators</h1>
         <p className="text-stone-500 text-sm mb-6">Verified creators on LipaClip, with audience stats and track record.</p>
 

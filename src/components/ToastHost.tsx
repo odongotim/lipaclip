@@ -25,7 +25,7 @@ export default function ToastHost() {
   }, [])
 
   return (
-    <div role="status" aria-live="polite" className="fixed bottom-4 inset-x-0 z-[60] flex flex-col items-center gap-2 px-4 pointer-events-none">
+    <div role="status" aria-live="polite" className="fixed bottom-24 md:bottom-4 inset-x-0 z-[60] flex flex-col items-center gap-2 px-4 pointer-events-none">
       {items.map(i => (
         <div key={i.id} className={`pointer-events-auto max-w-md w-full sm:w-auto rounded-xl px-4 py-3 text-sm shadow-lg flex items-start gap-3 ${STYLES[i.type]}`}>
           <span className="flex-1">{i.message}</span>

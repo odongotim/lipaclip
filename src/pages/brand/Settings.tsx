@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
-import BrandSidebar from '../../components/BrandSidebar'
+import BrandNav from '../../components/BrandNav'
 import PageLoader from '../../components/PageLoader'
+import LogoutButton from '../../components/LogoutButton'
 
 export default function BrandSettings() {
   const navigate = useNavigate()
@@ -55,9 +56,9 @@ export default function BrandSettings() {
   )
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
-      <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
-      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+      <BrandNav userName={profile?.display_name} />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
         <h1 className="text-stone-900 text-2xl font-bold mb-1">Brand settings</h1>
         <p className="text-stone-500 text-sm mb-8">Manage your brand profile and logo</p>
 
@@ -109,8 +110,12 @@ export default function BrandSettings() {
 
           <button onClick={handleSave} disabled={saving}
             className="w-full bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm">
-            {saving ? 'Saving...' : 'Save Settings'}
+            {saving ? 'Saving...' : 'Save settings'}
           </button>
+
+          <div className="pt-6 border-t border-stone-200">
+            <LogoutButton />
+          </div>
         </div>
       </main>
     </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
-import AdminSidebar from '../../components/AdminSidebar'
+import AdminNav from '../../components/AdminNav'
 import PageLoader from '../../components/PageLoader'
 import StatusBadge from '../../components/StatusBadge'
 import { toast } from '../../lib/toast'
@@ -144,9 +144,9 @@ export default function Views() {
   )
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
-      <AdminSidebar userName={profile?.display_name} />
-      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+      <AdminNav userName={profile?.display_name} />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
         <h1 className="text-stone-900 text-2xl font-bold mb-1">Manage views</h1>
         <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
           <p className="text-stone-500 text-sm max-w-md">Views update automatically for approved videos. Edit a count by hand to override it.</p>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase, getCurrentUser, subscribeToTable } from '../../lib/supabase'
-import InfluencerSidebar from '../../components/InfluencerSidebar'
+import CreatorNav from '../../components/CreatorNav'
 import { toast } from '../../lib/toast'
 import PageLoader from '../../components/PageLoader'
 import EmptyState from '../../components/EmptyState'
@@ -161,9 +161,9 @@ export default function InfluencerHome() {
   )
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
-      <InfluencerSidebar userName={profile?.display_name} />
-      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+      <CreatorNav userName={profile?.display_name} />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
         <h1 className="font-display text-stone-900 text-2xl font-extrabold tracking-tight mb-1">Browse campaigns</h1>
         <p className="text-stone-500 text-sm mb-8">Post as many videos as you like per campaign. All their views add up.</p>
 
@@ -174,7 +174,7 @@ export default function InfluencerHome() {
               <div className="text-brand-700 font-semibold text-sm">Verify a social account to start submitting</div>
               <div className="text-stone-500 text-xs mt-0.5">Add at least one social link and wait for admin verification before you can submit videos.</div>
             </div>
-            <Link to="/influencer/socials" className="bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex-shrink-0">Add socials</Link>
+            <Link to="/influencer/profile#social-accounts" className="bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex-shrink-0">Add socials</Link>
           </div>
         )}
 
@@ -338,7 +338,7 @@ export default function InfluencerHome() {
                         </button>
                       </>
                     ) : (
-                      <Link to="/influencer/socials" className="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-500 font-semibold py-2 rounded-lg transition text-sm">
+                      <Link to="/influencer/profile#social-accounts" className="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-500 font-semibold py-2 rounded-lg transition text-sm">
                         Verify a social account to submit
                       </Link>
                     )}

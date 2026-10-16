@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase, getCurrentUser, subscribeToTable } from '../../lib/supabase'
 import { Link, useNavigate } from 'react-router-dom'
-import BrandSidebar from '../../components/BrandSidebar'
+import BrandNav from '../../components/BrandNav'
 import PageLoader from '../../components/PageLoader'
 import StatCard from '../../components/StatCard'
 import StatusBadge from '../../components/StatusBadge'
@@ -105,9 +105,9 @@ export default function BrandDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
-      <BrandSidebar userName={profile?.display_name} logoUrl={profile?.logo_url} />
-      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+      <BrandNav userName={profile?.display_name} />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
         <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
           <div>
             <h1 className="font-display text-stone-900 text-2xl font-extrabold tracking-tight mb-1">Dashboard</h1>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
-import InfluencerSidebar from '../../components/InfluencerSidebar'
+import CreatorNav from '../../components/CreatorNav'
 import PageLoader from '../../components/PageLoader'
+import SocialLinksSection from '../../components/SocialLinksSection'
+import LogoutButton from '../../components/LogoutButton'
 
 export const CATEGORIES = ['Fashion', 'Food', 'Music', 'Comedy', 'Tech', 'Sports', 'Beauty', 'Business', 'Education', 'Lifestyle', 'Gaming', 'Faith']
 export const AGE_RANGES = ['Under 18', '18-24', '25-34', '35-44', '45+']
@@ -41,6 +43,12 @@ export default function InfluencerProfile() {
   const [error, setError] = useState('')
 
   useEffect(() => { loadData() }, [])
+
+  // Links like /influencer/profile#social-accounts scroll to their section once the page has loaded
+  useEffect(() => {
+    if (loading || !window.location.hash) return
+    document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [loading])
 
   const loadData = async () => {
     const user = await getCurrentUser()
@@ -124,11 +132,11 @@ export default function InfluencerProfile() {
   )
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
-      <InfluencerSidebar userName={profile?.display_name} />
-      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+      <CreatorNav userName={profile?.display_name} />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
         <h1 className="text-stone-900 text-2xl font-bold mb-1">My profile</h1>
-        <p className="text-stone-500 text-sm mb-8">Brands use this to see who you are and who you reach.</p>
+        <p className="text-stone-500 text-sm mb-8">Your social accounts, audience and track record. Brands use this to see who you are and who you reach.</p>
 
         {message && <div role="status" className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{message}</div>}
         {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
@@ -142,6 +150,9 @@ export default function InfluencerProfile() {
             {statsVerified ? 'Audience stats verified' : 'Audience stats self-reported'}
           </span>
         </div>
+
+        {/* Social accounts (moved here from the old My socials page) */}
+        <SocialLinksSection profile={profile} onSaved={patch => setProfile((prev: any) => ({ ...prev, ...patch }))} />
 
         {/* Performance on LipaClip */}
         <h2 className="text-stone-900 font-semibold mb-3 text-sm">Your LipaClip track record</h2>
@@ -235,6 +246,10 @@ export default function InfluencerProfile() {
             className="w-full bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm">
             {saving ? 'Saving...' : 'Save Profile'}
           </button>
+
+          <div className="pt-6 border-t border-stone-200 mt-6">
+            <LogoutButton />
+          </div>
         </div>
       </main>
     </div>

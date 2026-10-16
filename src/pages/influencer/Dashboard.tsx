@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser, subscribeToTable } from '../../lib/supabase'
-import InfluencerSidebar from '../../components/InfluencerSidebar'
+import CreatorNav from '../../components/CreatorNav'
 import PageLoader from '../../components/PageLoader'
 import StatCard from '../../components/StatCard'
 import EmptyState from '../../components/EmptyState'
@@ -81,9 +81,9 @@ export default function InfluencerDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
-      <InfluencerSidebar userName={profile?.display_name} />
-      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-8">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+      <CreatorNav userName={profile?.display_name} />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24 md:pb-10">
         <h1 className="font-display text-stone-900 text-2xl font-extrabold tracking-tight mb-1">My dashboard</h1>
         <p className="text-stone-500 text-sm mb-8">Track your earnings across all videos</p>
 

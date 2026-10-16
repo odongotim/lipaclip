@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Landing from './pages/Landing'
 import ToastHost from './components/ToastHost'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -17,7 +17,6 @@ import BrandSettings from './pages/brand/Settings'
 import Creators from './pages/brand/Creators'
 import InfluencerHome from './pages/influencer/Home'
 import InfluencerDashboard from './pages/influencer/Dashboard'
-import Socials from './pages/influencer/Socials'
 import InfluencerProfile from './pages/influencer/Profile'
 import Withdraw from './pages/influencer/Withdraw'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -41,7 +40,6 @@ const TITLES: Record<string, string> = {
   '/influencer': 'Browse campaigns',
   '/influencer/dashboard': 'My dashboard',
   '/influencer/profile': 'My profile',
-  '/influencer/socials': 'My socials',
   '/influencer/withdraw': 'Withdraw',
   '/admin': 'Admin',
   '/admin/users': 'Users',
@@ -93,7 +91,7 @@ function App() {
         <Route path="/influencer" element={<InfluencerHome />} />
         <Route path="/influencer/dashboard" element={<InfluencerDashboard />} />
         <Route path="/influencer/profile" element={<InfluencerProfile />} />
-        <Route path="/influencer/socials" element={<Socials />} />
+        <Route path="/influencer/socials" element={<Navigate to="/influencer/profile#social-accounts" replace />} />
         <Route path="/influencer/withdraw" element={<Withdraw />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<AdminUsers />} />
