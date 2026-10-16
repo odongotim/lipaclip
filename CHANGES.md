@@ -92,3 +92,31 @@
 - `momo-request-to-pay` refuses campaigns that are already paid, and resets a failed campaign to pending on retry
 - New migration `20261011_protect_campaign_payment.sql`: the database itself now forces new campaigns to start unpaid, blocks brands from setting a campaign live or changing its status, spend or start date, locks budget and rate after payment, and blocks deleting a paid campaign or its payment and video records
 - Redeploy: `supabase functions deploy momo-request-to-pay`
+
+## Round 13: MoMo auth errors
+- MoMo errors now say the HTTP status, whether the call was made in sandbox or production mode, and MTN's own message
+- Production calls now send `X-Target-Environment: mtnuganda` (it was `production`, which MTN does not accept for Uganda); override with the `MOMO_TARGET_ENVIRONMENT` secret
+- Status checks no longer crash when MTN answers with plain text
+- Redeploy all four MoMo functions (they share this code)
+
+## Phone-friendly deploy
+- `supabase/dashboard-paste/`: one-file versions of every MoMo function (shared code inlined) that can be pasted into the Supabase dashboard code editor, no terminal needed
+
+## Round 14: Tabs instead of the sidebar
+- Navigation is now tabs: a bottom tab bar on phones and a tab row in the header on desktop (`TabNav`, `BrandNav`, `CreatorNav`, `AdminNav`). Brand: Dashboard, New campaign (highlighted), Creators, Settings. Creator: Browse, Dashboard, Withdraw, Profile. Admin: scrolling tabs with a Log out button in the header.
+- "My socials" moved into the creator Profile page (new "Social accounts" section at the top, verification status included). The old `/influencer/socials` address redirects there, and the old page is removed.
+- Log out now lives at the bottom of the creator Profile page and the brand Settings page
+- Toast messages sit above the phone tab bar
+
+## Round 15: Tab badges
+- Brand: the Dashboard tab shows how many videos are waiting for review
+- Creator: the Browse tab shows how many invitations are unanswered
+- Counts refresh on every page change and live when Realtime is on for `submissions` / `campaign_invites`; any error simply hides the badge
+
+## Round 16: Edge function CORS
+- All edge functions now allow the extra request headers the app sends (including `x-application-name`) and list their methods, so the browser's pre-check can't block a call and show "Failed to send a request to the Edge Function"
+- One-file versions in `supabase/dashboard-paste/` regenerated to match
+
+## Round 17: MoMo sandbox setup from the admin page
+- Admin > Settings has a new "MTN MoMo sandbox setup" box: creates a fresh MoMo API user and key and shows them with Copy buttons (no terminal needed)
+- `momo-provision-sandbox` now requires an admin login (before, anyone could call it and receive credentials) and is disabled when MOMO_ENV is production

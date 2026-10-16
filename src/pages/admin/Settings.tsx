@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import AdminNav from '../../components/AdminNav'
 import PageLoader from '../../components/PageLoader'
+import MomoSandboxSetup from '../../components/MomoSandboxSetup'
 
 type Settings = {
   id: number
@@ -192,6 +193,7 @@ export default function Settings() {
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
         </div>
+              <MomoSandboxSetup />
       </main>
     </div>
   )
